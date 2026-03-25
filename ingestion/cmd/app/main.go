@@ -80,9 +80,10 @@ func main() {
 				return nil
 			}
 
-			if fileName == "status.csv" {
-				// attribute insertion process for status
-			} else {
+			var createdRTIEntity *models.Entity
+
+			// 1. RTIEntity creation
+			if fileName == "request.csv" {
 				// node creation process and attribute insertion for request
 				// open the file
 				f, err := os.Open(path)
@@ -131,7 +132,7 @@ func main() {
 						Index:               index,
 					}
 
-					_, err = s.InsertRTIRequest(entity)
+					createdRTIEntity, err = s.InsertRTIRequest(entity)
 
 					if err != nil {
 						log.Printf("[main] RTI Insertion failed %s", err)
@@ -140,6 +141,54 @@ func main() {
 					}
 
 					rtiRequestCount++
+
+				}
+
+				// 2. Update RTIEntity with request and status attributes
+				if createdRTIEntity != nil {
+
+					requestFilePath := filepath.Join(fileDir, "request.csv")
+					statusFilePath := filepath.Join(fileDir, "status.csv")
+					fmt.Printf("\n request file path")
+					fmt.Println(requestFilePath)
+					// fmt.Printf("\n status file path")
+					// fmt.Println(statusFilePath)
+					requestTabularData, err := utils.CsvToTabular(requestFilePath)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					statusTabularData, err := utils.CsvToTabular(statusFilePath)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					requestContent := map[string]interface{}{
+						"columns": requestTabularData.Columns,
+						"rows":    requestTabularData.Rows,
+					}
+
+					statusContent := map[string]interface{}{
+						"columns": statusTabularData.Columns,
+						"rows":    statusTabularData.Rows,
+					}
+
+					fmt.Printf("\ntabular request data : %s \n", requestContent)
+					fmt.Printf("\ntabular status data : %s \n", statusContent)
+
+					updatedEntityRequest, errRequest := s.ProcessRTIAttributes(createdRTIEntity.ID, requestContent, "request", createdRTIEntity.Created)
+					if errRequest != nil {
+						log.Printf("[main] RTI request attribute insertion failed: %v", errRequest)
+					} else {
+						fmt.Printf("update success request %+v\n", updatedEntityRequest)
+					}
+
+					updatedEntityStatus, errStatus := s.ProcessRTIAttributes(createdRTIEntity.ID, statusContent, "status", createdRTIEntity.Created)
+					if errStatus != nil {
+						log.Printf("[main] RTI status attribute insertion failed: %v", errStatus)
+					} else {
+						fmt.Printf("update success status %+v\n", updatedEntityStatus)
+					}
 
 				}
 

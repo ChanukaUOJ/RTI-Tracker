@@ -16,6 +16,14 @@ type RTIRequest struct {
 	Index               string `json:"index"`
 }
 
+type RTIStatus struct {
+	Status      string `json:"status"`
+	Description string `json:"description"`
+	EntryTime   string `json:"entry_time"`
+	ExitTime    string `json:"exit_time"`
+	Source      string `json:"source"`
+}
+
 func (r *RTIRequest) Validate() error {
 
 	// validate title

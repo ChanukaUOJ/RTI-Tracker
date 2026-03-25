@@ -156,10 +156,40 @@ func (s *RTIService) InsertRTIRequest(RTIEntity *models.RTIRequest) (*models.Ent
 		},
 	}
 
-	updatedEntity, err := s.ingestionClient.UpdateEntity(parentID, parentEntity)
+	_, err = s.ingestionClient.UpdateEntity(parentID, parentEntity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update parent entity: %w", err)
 	}
 
+	return createdEntity, nil
+}
+
+// ProcessRTIAttributes
+func (s *RTIService) ProcessRTIAttributes(parentID string, jsonPayload map[string]interface{}, attributeName string, startTime string) (*models.Entity, error) {
+
+	parentEntity := &models.Entity{
+		ID: parentID,
+		Attributes: []models.AttributeEntry{
+			{
+				Key: attributeName,
+				Value: models.AttributeValueCollection{
+					Values: []models.TimeBasedValue{
+						{
+							StartTime: startTime,
+							EndTime:   "",
+							Value:     jsonPayload,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	updatedEntity, err := s.ingestionClient.UpdateEntity(parentID, parentEntity)
+	if err != nil {
+		return nil, fmt.Errorf("[RTI] Error: %w", err)
+	}
+
 	return updatedEntity, nil
+
 }
