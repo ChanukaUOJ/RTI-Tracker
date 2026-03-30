@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"time"
 )
 
 type TabularData struct {
@@ -43,9 +42,9 @@ func CsvToTabular(path string) (*TabularData, error) {
 		for _, v := range row {
 
 			// convert YYYY-MM-DD to YYYY/MM/DD if it matches the format
-			if t, err := time.Parse("2006-01-02", v); err == nil {
-				v = t.Format("2006/01/02")
-			}
+			// if t, err := time.Parse("2006-01-02", v); err == nil {
+			// 	v = t.Format("2006/01/02")
+			// }
 
 			// try to parse numbers as int
 			if n, err := strconv.Atoi(v); err == nil {

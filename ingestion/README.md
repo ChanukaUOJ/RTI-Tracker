@@ -7,12 +7,12 @@
 
 #### run the tests
 ```
-    go test ./tests/
+    go test ./tests/ -v
 ```
 
 #### run the scripts
 ```
-    go run ./cmd/app/main.go --data "../data/RTI" -v
+    go run ./cmd/app/main.go --data "../data/RTI"
 ```
 
 -------- or --------
