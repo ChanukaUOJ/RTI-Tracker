@@ -9,6 +9,26 @@ This directory contains the SQL scripts used to initialize and seed the RTI-Trac
 ## Local Development
 To reset your local database and apply fresh schema/seed data, run:
 
+#### Environment setup
+
+**macOS / Linux**
+```bash
+cp .env.example .env
+```
+
+**Windows (PowerShell)**
+```powershell
+Copy-Item .env.example .env
+```
+
+**Windows (Command Prompt)**
+```cmd
+copy .env.example .env
+```
+
+- Edit `.env` and fill in your values before running Docker Compose.
+- Docker Compose reads `.env` automatically — no need to `source` it.
+
 ```bash
 docker compose down -v && docker compose up --build
 ```
