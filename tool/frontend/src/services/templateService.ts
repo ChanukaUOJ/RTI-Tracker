@@ -55,7 +55,7 @@ export const templateService = {
    * Create a new RTI template
    */
   createRTITemplate: async (template: Omit<Template, 'id'>): Promise<Template> => {
-    const formData = toFormData(template.title, template.description, template.content);
+    void toFormData(template.title, template.description, template.content);
 
     console.log(`[POST] Calling createRTITemplate for: ${template.title}`);
 
@@ -79,7 +79,7 @@ export const templateService = {
    * Update an existing RTI template
    */
   updateRTITemplate: async (id: string, updates: Partial<Template>): Promise<Template> => {
-    const formData = toFormData(updates.title, updates.description, updates.content);
+    void toFormData(updates.title, updates.description, updates.content);
 
     console.log(`[PUT] Calling updateRTITemplate for ID: ${id}`);
 

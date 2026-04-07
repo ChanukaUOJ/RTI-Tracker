@@ -19,6 +19,7 @@ export function Templates() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
 
+  type Variable = { name: string; code: string; desc: string };
 
   const fetchTemplates = async (page: number = 1) => {
     setIsLoading(true);
@@ -33,7 +34,7 @@ export function Templates() {
       }
       return response.data;
 
-    } catch (error) {
+    } catch {
       toast.error('Failed to load templates');
       return [];
     } finally {
@@ -42,10 +43,10 @@ export function Templates() {
   };
 
   useEffect(() => {
-    fetchTemplates(1);
+    fetchTemplates();
   }, []);
 
-  const variables = [
+  const variables: Variable[] = [
     { name: 'date', code: '{{date}}', desc: 'Current Date' },
     { name: 'sender_name', code: '{{sender_name}}', desc: 'Applicant Name' },
     { name: 'receiver_name', code: '{{receiver_name}}', desc: 'Institution Name' },
@@ -65,7 +66,7 @@ export function Templates() {
     // 1. Handle Bold & Italic
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); // double asterik bold
     html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>'); // single asterik italic
-    html = html.replace(/(?<!_|\{)_([^_\{}]+)_(?!_|\})/g, '<em>$1</em>'); // underscore italic
+    html = html.replace(/(?<!_|{)_([^_{}]+)_(?!_|})/g, '<em>$1</em>'); // underscore italic
 
     // 2. Handle variables (pills)
     html = html.replace(/{{([^}]+)}}/g, (match, p1) => {
@@ -112,7 +113,7 @@ export function Templates() {
     const italics = tempDiv.querySelectorAll('em, i');
     italics.forEach(italic => italic.replaceWith(`*${italic.textContent}*`));
 
-    let text = tempDiv.textContent || '';
+    const text = tempDiv.textContent || '';
     return text.replace(/\n{3,}/g, '\n\n').trim();
   };
 
@@ -193,11 +194,11 @@ export function Templates() {
         toast.success('Template updated!');
       }
 
-      await fetchTemplates(1);
+      await fetchTemplates();
 
       setSelectedTemplate(savedTemplate);
       setIsEditingName(false);
-    } catch (error) {
+    } catch {
       toast.error('Failed to save template');
     }
   };
@@ -230,12 +231,12 @@ export function Templates() {
           setSelectedTemplate(null);
         }
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete template');
     }
   };
 
-  const onDragStart = (e: React.DragEvent, variable: any) => {
+  const onDragStart = (e: React.DragEvent, variable: Variable) => {
     e.dataTransfer.setData('application/json', JSON.stringify(variable));
   };
 
@@ -283,15 +284,15 @@ export function Templates() {
     const data = e.dataTransfer.getData('application/json');
     if (!data) return;
 
-    const variable = JSON.parse(data);
+    const variable = JSON.parse(data) as Variable;
     const pillHtml = createPillHtml(variable.code, variable.name);
 
     let range: Range | null = null;
 
     // Use standard caretPositionFromPoint if available (Firefox)
-    // @ts-ignore - Type definitions might not include this yet
+    // @ts-expect-error - DOM lib typings may not include caretPositionFromPoint
     if (document.caretPositionFromPoint) {
-      // @ts-ignore
+      // @ts-expect-error - DOM lib typings may not include caretPositionFromPoint
       const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
       if (pos) {
         range = document.createRange();
@@ -300,9 +301,9 @@ export function Templates() {
       }
     }
     // Fallback to older webkit/blink way (Chrome/Edge/Safari)
-    // @ts-ignore
+    // @ts-expect-error - DOM lib typings may not include caretRangeFromPoint
     else if (document.caretRangeFromPoint) {
-      // @ts-ignore
+      // @ts-expect-error - DOM lib typings may not include caretRangeFromPoint
       range = document.caretRangeFromPoint(e.clientX, e.clientY);
     }
 
@@ -314,7 +315,7 @@ export function Templates() {
     }
   };
 
-  const insertVariableAtCursor = (variable: any) => {
+  const insertVariableAtCursor = (variable: Variable) => {
     const pillHtml = createPillHtml(variable.code, variable.name);
     editorRef.current?.focus();
     insertHtmlAtSelection(pillHtml, window.getSelection());

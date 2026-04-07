@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FileCode } from 'lucide-react';
+import { FileCode, Inbox, Users, User, ListChecks } from 'lucide-react';
 
 export function Sidebar() {
   const navItems = [
@@ -7,6 +7,26 @@ export function Sidebar() {
       name: 'Template Manager',
       path: '/templates',
       icon: FileCode
+    },
+    {
+      name: 'RTI Requests',
+      path: '/rti-requests',
+      icon: Inbox
+    },
+    {
+      name: 'Receivers',
+      path: '/receivers',
+      icon: Users
+    },
+    {
+      name: 'Senders',
+      path: '/senders',
+      icon: User
+    },
+    {
+      name: 'Status',
+      path: '/status',
+      icon: ListChecks
     }
   ];
 
