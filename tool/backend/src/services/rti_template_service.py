@@ -1,9 +1,10 @@
-from uuid import uuid4
+from typing import Dict
+from uuid import UUID, uuid4
 from src.services.github_file_service import GithubFileService
 from src.models import RTITemplate, PaginationModel
 from src.models.response_models import RTITemplateListResponse, RTITemplateResponse, RTITemplateRequest
 from sqlmodel import select, func, Session
-from src.core.exceptions import InternalServerException, BadRequestException
+from src.core.exceptions import InternalServerException, BadRequestException, NotFoundException
 import logging
 
 logger = logging.getLogger(__name__)
@@ -99,4 +100,34 @@ class RTITemplateService:
                 await self.file_service.delete_file(file_path=uploaded_file_path)
             logger.error(f"[RTI SERVICE] Error creating RTI template: {e}")
             raise InternalServerException(f"[RTI SERVICE] Failed to create RTI template: {e}") from e
+
+    # API
+    async def delete_rti_template(
+        self,
+        *,
+        template_id,
+    ) -> Dict:
+        try:
+            # fetch the record from the table
+            try:
+                target_id = UUID(template_id) if isinstance(template_id, str) else template_id
+            except ValueError:
+                raise BadRequestException(f"Invalid UUID format: {template_id}")
+
+            rti_template = self.session.get(RTITemplate, target_id)
+
+            if not rti_template:
+                raise NotFoundException(f"RTI Template with id {template_id} not found.")
+
+            return rti_template
+
+        except (BadRequestException, NotFoundException):
+            raise
+        except Exception as e:
+            
+            logger.error(f"[RTI SERVICE] Error deleting RTI template: {e}")
+            raise InternalServerException(f"[RTI SERVICE] Failed to create RTI template: {e}") from e
+
+
+
 

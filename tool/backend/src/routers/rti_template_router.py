@@ -1,3 +1,4 @@
+from fastapi import Path
 from fastapi import APIRouter, Depends, Query, Form, UploadFile, File
 from typing import Annotated, Optional
 from src.services import RTITemplateService, GithubFileService
@@ -34,6 +35,15 @@ async def create_rti_templates_endpoint(
 ):
     template_request = RTITemplateRequest(title=title, description=description, file=file)
     response = await service.create_rti_template(template_request=template_request)
+    return response
+
+@router.delete("/rti_templates/{id}")
+async def delete_rti_template_endpoint(
+    id: Annotated[str, Path(title="ID of the RTI Template")],
+    service: RTITemplateService = Depends(get_rti_template_service),
+    # user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER]))
+):
+    response = await service.delete_rti_template(template_id=id)
     return response
 
 
