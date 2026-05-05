@@ -12,7 +12,7 @@ export const templateService = {
   /**
    * Fetches templates with pagination
    */
-  getRTITemplates: async (page: number = 1, pageSize: number = 10): Promise<{
+  getRTITemplates: async (page: number = 1, pageSize: number = 10, httpClient?: any): Promise<{
     data: Template[],
     pagination: {
       page: number,
@@ -59,7 +59,7 @@ export const templateService = {
    * Create a new RTI template
    */
   createRTITemplate: async (template: Omit<Template, 'id'>): Promise<Template> => {
-    const contentFile = template.content 
+    const contentFile = template.content
       ? new File([template.content], 'template.md', { type: 'text/markdown' })
       : undefined;
 
@@ -112,7 +112,7 @@ export const templateService = {
    * Update an existing RTI template
    */
   updateRTITemplate: async (id: string, updates: Partial<Template>): Promise<Template> => {
-    const contentFile = updates.content 
+    const contentFile = updates.content
       ? new File([updates.content], 'template.md', { type: 'text/markdown' })
       : undefined;
 
