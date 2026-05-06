@@ -24,8 +24,8 @@ export interface Sender {
 
 export interface Receiver {
   id: string;
-  institution: Institution;
   position: Position;
+  institution: Institution;
   email: string | null;
   contactNo: string | null;
   address: string | null;
