@@ -43,21 +43,12 @@ RTIRequestResponse:
       example: Requesting documents related to the 2024 healthcare budget regarding
         medical supplies.
       description: Description of the RTI request.
-    senderId:
-      type: string
-      format: uuid
-      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-      description: ID of the sender.
-    receiverId:
-      type: string
-      format: uuid
-      example: f47ac10b-58cc-4372-a567-0e02b2c3d479
-      description: ID of the receiver.
-    rtiTemplateId:
-      type: string
-      format: uuid
-      example: b9d02c84-8f1b-4835-9730-84a28f804561
-      description: ID of the RTI template used, if any.
+    sender:
+      $ref: "senders.yaml#/SenderShortResponse"
+    receiver:
+      $ref: "receivers.yaml#/ReceiverShortResponse"
+    rtiTemplate:
+      $ref: "RTITemplates.yaml#/RTITemplateShortResponse"
     createdAt:
       type: string
       format: date-time

@@ -24,15 +24,32 @@
             schema:
               $ref: "../components/schemas/RTIRequests.yaml#/RTIRequestResponse"
             example:
-              id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-              title: Request for Budget Information 2024
-              description: Requesting documents related to the 2024 healthcare budget
-                regarding medical supplies.
-              senderId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-              receiverId: f47ac10b-58cc-4372-a567-0e02b2c3d479
-              rtiTemplateId: b9d02c84-8f1b-4835-9730-84a28f804561
-              createdAt: "2026-03-31T09:00:00Z"
-              updatedAt: "2026-03-31T09:00:00Z"
+              id: 8cba6e9e-7b9c-4c9c-979d-ecb668a6df9c
+              title: School Expenditure 2024
+              description: Requesting budget allocation for primary schools in Jaffna.
+              sender:
+                id: 1605661f-f0df-49c2-b861-8652c5b727fd
+                name: Bimali Silva
+                email: bimali.s@example.com
+                address: Gampaha
+                contactNo: "0712345678"
+              receiver:
+                id: fbbdd56c-4db5-4d43-9d0a-8a3c82e4c2c9
+                position:
+                  id: f31625cc-c130-4295-959a-c4c1aea7fd94
+                  name: Designated Officer
+                institution:
+                  id: e9c6313c-5652-4100-be75-68e7382b4fad
+                  name: Department of X
+                email: example@gov.lk
+                address: null
+                contactNo: null
+              rtiTemplate:
+                id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
+                title: Education Data Request
+                file: templates/v2/edu_data.pdf
+              createdAt: "2026-05-09T03:14:44.547287Z"
+              updatedAt: "2026-05-09T03:14:44.547287Z"
       "401":
         $ref: "../components/responses/Errors.yaml#/Unauthorized"
       "422":
@@ -61,15 +78,32 @@
               $ref: "../components/schemas/RTIRequests.yaml#/RTIRequestListResponse"
             example:
               data:
-                - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  title: Request for Budget Information 2024
-                  description: Requesting documents related to the 2024 healthcare budget
-                    regarding medical supplies.
-                  senderId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  receiverId: f47ac10b-58cc-4372-a567-0e02b2c3d479
-                  rtiTemplateId: b9d02c84-8f1b-4835-9730-84a28f804561
-                  createdAt: "2026-03-31T09:00:00Z"
-                  updatedAt: "2026-03-31T09:00:00Z"
+                - id: 8cba6e9e-7b9c-4c9c-979d-ecb668a6df9c
+                  title: School Expenditure 2024
+                  description: Requesting budget allocation for primary schools in Jaffna.
+                  sender:
+                    id: 1605661f-f0df-49c2-b861-8652c5b727fd
+                    name: Bimali Silva
+                    email: bimali.s@example.com
+                    address: Gampaha
+                    contactNo: "0712345678"
+                  receiver:
+                    id: fbbdd56c-4db5-4d43-9d0a-8a3c82e4c2c9
+                    position:
+                      id: f31625cc-c130-4295-959a-c4c1aea7fd94
+                      name: Designated Officer
+                    institution:
+                      id: e9c6313c-5652-4100-be75-68e7382b4fad
+                      name: Department of Education
+                    email: do.edu.updated@gov.lk
+                    address: null
+                    contactNo: null
+                  rtiTemplate:
+                    id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
+                    title: Education Data Request
+                    file: templates/v2/edu_data.pdf
+                  createdAt: "2026-05-09T03:14:44.547287Z"
+                  updatedAt: "2026-05-09T03:14:44.547287Z"
               pagination:
                 page: 1
                 pageSize: 20
@@ -100,15 +134,32 @@
             schema:
               $ref: "../components/schemas/RTIRequests.yaml#/RTIRequestResponse"
             example:
-              id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-              title: Request for Budget Information 2024
-              description: Requesting documents related to the 2024 healthcare budget
-                regarding medical supplies.
-              senderId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-              receiverId: f47ac10b-58cc-4372-a567-0e02b2c3d479
-              rtiTemplateId: b9d02c84-8f1b-4835-9730-84a28f804561
-              createdAt: "2026-03-31T09:00:00Z"
-              updatedAt: "2026-03-31T09:00:00Z"
+              id: 8cba6e9e-7b9c-4c9c-979d-ecb668a6df9c
+              title: School Expenditure 2024
+              description: Requesting budget allocation for primary schools in Jaffna.
+              sender:
+                id: 1605661f-f0df-49c2-b861-8652c5b727fd
+                name: Bimali Silva
+                email: bimali.s@example.com
+                address: Gampaha
+                contactNo: "0712345678"
+              receiver:
+                id: fbbdd56c-4db5-4d43-9d0a-8a3c82e4c2c9
+                position:
+                  id: f31625cc-c130-4295-959a-c4c1aea7fd94
+                  name: Designated Officer
+                institution:
+                  id: e9c6313c-5652-4100-be75-68e7382b4fad
+                  name: Department of Education
+                email: do.edu.updated@gov.lk
+                address: null
+                contactNo: null
+              rtiTemplate:
+                id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
+                title: Education Data Request
+                file: templates/v2/edu_data.pdf
+              createdAt: "2026-05-09T03:14:44.547287Z"
+              updatedAt: "2026-05-09T03:14:44.547287Z"
       "401":
         $ref: "../components/responses/Errors.yaml#/Unauthorized"
       "404":
@@ -142,12 +193,30 @@
             schema:
               $ref: "../components/schemas/RTIRequests.yaml#/RTIRequestResponse"
             example:
-              id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+              id: 8cba6e9e-7b9c-4c9c-979d-ecb668a6df9c
               title: Updated Request Title
               description: Updated description for the RTI request.
-              senderId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-              receiverId: f47ac10b-58cc-4372-a567-0e02b2c3d479
-              rtiTemplateId: b9d02c84-8f1b-4835-9730-84a28f804561
+              sender:
+                id: 1605661f-f0df-49c2-b861-8652c5b727fd
+                name: Bimali Silva
+                email: bimali.s@example.com
+                address: Gampaha
+                contactNo: "0712345678"
+              receiver:
+                id: fbbdd56c-4db5-4d43-9d0a-8a3c82e4c2c9
+                position:
+                  id: f31625cc-c130-4295-959a-c4c1aea7fd94
+                  name: Designated Officer
+                institution:
+                  id: e9c6313c-5652-4100-be75-68e7382b4fad
+                  name: Department of Education
+                email: do.edu.updated@gov.lk
+                address: null
+                contactNo: null
+              rtiTemplate:
+                id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
+                title: Education Data Request
+                file: templates/v2/edu_data.pdf
               createdAt: "2026-03-31T09:00:00Z"
               updatedAt: "2026-04-01T10:00:00Z"
       "401":
