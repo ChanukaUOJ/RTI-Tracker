@@ -1,4 +1,4 @@
-/rti_requests/{id}/histories:
+/rti_requests/{rti_id}/histories:
   # Get all history records for an RTI request
   get:
     summary: List all history records for an RTI request
@@ -9,7 +9,7 @@
     security:
       - opaqueBearerToken: []
     parameters:
-      - name: id
+      - name: rti_id
         in: path
         required: true
         schema:
@@ -32,7 +32,6 @@
                   rtiStatus:
                     id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                     name: Pending
-                    code: PENDING
                   direction: sent
                   description: Initial request sent to the department.
                   entryTime: "2026-03-31T09:00:00Z"
@@ -61,7 +60,7 @@
     security:
       - opaqueBearerToken: []
     parameters:
-      - name: id
+      - name: rti_id
         in: path
         required: true
         schema:

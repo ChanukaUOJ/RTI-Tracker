@@ -45,7 +45,13 @@ paths:
     $ref: "./paths/rti-requests.yaml#/~1rti-requests"
   /rti-requests/{id}:
     $ref: "./paths/rti-requests.yaml#/~1rti-requests~1{id}"
-    
+
+  # rti request history paths
+  /rti_requests/{rti_id}/histories:
+    $ref: "./paths/rti-request-histories.yaml#/~1rti_requests~1{rti_id}~1histories"
+  /rti_requests/{rti_id}/histories/{history_id}:
+    $ref: "./paths/rti-request-histories.yaml#/~1rti_requests~1{rti_id}~1histories~1{history_id}"
+
   # receivers paths
   /receivers:
     $ref: "./paths/receivers.yaml#/~1receivers"
@@ -81,6 +87,14 @@ components:
       $ref: "./components/schemas/RTIRequests.yaml#/RTIRequestResponse"
     RTIRequestListResponse:
       $ref: "./components/schemas/RTIRequests.yaml#/RTIRequestListResponse"
+    RTIRequestHistoryRequest:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryRequest"
+    RTIRequestHistoryUpdateRequest:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryUpdateRequest"
+    RTIRequestHistoryResponse:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryResponse"
+    RTIRequestHistoryListResponse:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryListResponse"
     Pagination:
       $ref: "./components/schemas/common.yaml#/Pagination"
     ErrorResponse:
