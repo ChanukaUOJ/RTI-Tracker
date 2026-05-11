@@ -30,36 +30,34 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
   const createPillHtml = (code: string, name: string) => {
     return `<span class="pill-chip inline decoration-inherit" data-code="${code}" contenteditable="false" style="font-weight: inherit; font-style: inherit; text-decoration: inherit;">` +
       `<span class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 border border-blue-200 rounded mx-0.5 bg-blue-100 text-blue-800 text-xs align-baseline cursor-default select-none transition-colors" style="font-weight: inherit; font-style: inherit; text-decoration: inherit;">` +
-        `<span style="font-weight: inherit; font-style: inherit; text-decoration: inherit;">${name}</span>` +
-        `<span class="pill-remove hover:bg-blue-300 rounded px-1 cursor-pointer opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center font-bold ml-0.5" onclick="this.parentElement.parentElement.remove()">×</span>` +
+      `<span style="font-weight: inherit; font-style: inherit; text-decoration: inherit;">${name}</span>` +
+      `<span class="pill-remove hover:bg-blue-300 rounded px-1 cursor-pointer opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center font-bold ml-0.5" onclick="this.parentElement.parentElement.remove()">×</span>` +
       `</span>` +
-    `</span>`;
+      `</span>`;
   };
 
   const parseMarkdownToHtml = (markdown: string) => {
-    let html = markdown || '';
+    if (!markdown || markdown.trim() === '') return '';
 
-    // 1. Handle variables (pills)
+    // 1. Split into lines and wrap in block elements FIRST
+    let html = markdown.split('\n').map(line => {
+      if (line.startsWith('# ')) return `<h1>${line.slice(2)}</h1>`;
+      if (line.startsWith('## ')) return `<h2>${line.slice(3)}</h2>`;
+      return line.trim() ? `<p>${line}</p>` : `<p><br></p>`;
+    }).join('');
+
+    // 2. Handle Bold & Italic before variables
+    //    so that **{{var}}** wraps the pill inside <strong>
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+
+    // 3. Handle variables (pills) last — they now sit inside formatting tags
     html = html.replace(/{{([^}]+)}}/g, (match) => {
       const code = match.trim();
       const cleanLabel = code.replace(/{{|}}/g, '').trim();
       const name = placeholders[code] || cleanLabel.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       return createPillHtml(code, name);
     });
-
-    // 2. Handle Bold, Italic & Underline
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    html = html.replace(/(?<!_|_\{)_([^_\{}]+)_(?!_|_\})/g, '<em>$1</em>');
-    html = html.replace(/<u>(.*?)<\/u>/g, '<u>$1</u>'); // Handle existing underline tags
-
-    // 3. Handle lines and headings
-    if (!markdown || markdown.trim() === '') return '';
-    html = html.split('\n').map(line => {
-      if (line.startsWith('# ')) return `<h1>${line.slice(2)}</h1>`;
-      if (line.startsWith('## ')) return `<h2>${line.slice(3)}</h2>`;
-      return line.trim() ? `<p>${line}</p>` : `<p><br></p>`;
-    }).join('');
 
     return html;
   };
@@ -75,14 +73,16 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
       if (node.nodeType !== Node.ELEMENT_NODE) return '';
 
       const el = node as HTMLElement;
+
+      // For pills: return just the data-code, don't recurse into children
+      if (el.classList.contains('pill-chip')) {
+        return el.getAttribute('data-code') || '';
+      }
+
       let content = '';
       el.childNodes.forEach(child => {
         content += walk(child);
       });
-
-      if (el.classList.contains('pill-chip')) {
-        return el.getAttribute('data-code') || '';
-      }
 
       const tag = el.tagName.toLowerCase();
       if (tag === 'strong' || tag === 'b') return `**${content}**`;
@@ -100,56 +100,31 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
     return markdown.replace(/\n{3,}/g, '\n\n');
   };
 
+  const cleanPillInternals = (editor: HTMLElement) => {
+    editor.querySelectorAll('.pill-chip').forEach(pill => {
+      pill.querySelectorAll('strong, b, em, i, u').forEach(tag => {
+        tag.replaceWith(...Array.from(tag.childNodes));
+      });
+    });
+  };
+
   const applyFormat = (command: string, value: string | undefined = undefined) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
     if (['bold', 'italic', 'underline'].includes(command)) {
-      const selection = window.getSelection();
-      if (selection && !selection.isCollapsed) {
-        const range = selection.getRangeAt(0);
-        const tag = command === 'bold' ? 'strong' : command === 'italic' ? 'em' : 'u';
-        
-        // Only use custom logic if pills are involved in the selection
-        const fragment = range.cloneContents();
-        if (!fragment.querySelector('.pill-chip')) {
-          document.execCommand(command, false, value);
-          editorRef.current?.focus();
-          setTimeout(triggerChange, 0);
-          return;
-        }
+      const pills = editor.querySelectorAll('.pill-chip');
+      pills.forEach(pill => pill.setAttribute('contenteditable', 'true'));
 
-        // Custom toggle logic for selections with pills
-        let parent = range.commonAncestorContainer as HTMLElement;
-        if (parent.nodeType === Node.TEXT_NODE) parent = parent.parentElement!;
-        const existing = parent.closest(tag);
+      document.execCommand(command, false, value);
 
-        if (existing) {
-          // Un-bold / Un-italic / Un-underline
-          existing.replaceWith(...Array.from(existing.childNodes));
-          triggerChange();
-          return;
-        } else {
-          // Apply formatting including pills
-          const wrapper = document.createElement(tag);
-          try {
-            wrapper.appendChild(range.extractContents());
-            range.insertNode(wrapper);
-            
-            // Reselect the new content
-            selection.removeAllRanges();
-            const newRange = document.createRange();
-            newRange.selectNodeContents(wrapper);
-            selection.addRange(newRange);
-            
-            setTimeout(triggerChange, 0);
-            return;
-          } catch (e) {
-            console.error("Custom format failed, falling back", e);
-          }
-        }
-      }
+      pills.forEach(pill => pill.setAttribute('contenteditable', 'false'));
+      cleanPillInternals(editor);
+    } else {
+      document.execCommand(command, false, value);
     }
 
-    document.execCommand(command, false, value);
-    editorRef.current?.focus();
+    editor.focus();
     setTimeout(triggerChange, 0);
   };
 
@@ -321,8 +296,8 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
         onDrop={onDrop}
         onDragOver={(e) => e.preventDefault()}
         className="flex-1 p-8 bg-white overflow-y-auto outline-none text-[16px] text-gray-800 leading-relaxed white-space-pre-wrap cursor-text empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none empty:before:italic [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-gray-900 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-gray-800 [&_p]:m-0 [&_strong]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline min-h-0"
-        style={{ 
-          whiteSpace: 'pre-wrap', 
+        style={{
+          whiteSpace: 'pre-wrap',
           fontFamily: '"Times New Roman", Times, serif',
           textAlign: 'justify',
           textJustify: 'inter-word'
