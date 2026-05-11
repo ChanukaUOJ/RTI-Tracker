@@ -39,19 +39,60 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
   const parseMarkdownToHtml = (markdown: string) => {
     if (!markdown || markdown.trim() === '') return '';
 
-    // 1. Split into lines and wrap in block elements FIRST
-    let html = markdown.split('\n').map(line => {
-      if (line.startsWith('# ')) return `<h1>${line.slice(2)}</h1>`;
-      if (line.startsWith('## ')) return `<h2>${line.slice(3)}</h2>`;
-      return line.trim() ? `<p>${line}</p>` : `<p><br></p>`;
-    }).join('');
+    const lines = markdown.split('\n');
+    let html = '';
+    let i = 0;
 
-    // 2. Handle Bold & Italic before variables
-    //    so that **{{var}}** wraps the pill inside <strong>
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Numbered list items (1. item, 2. item, etc.)
+      const olMatch = line.match(/^\d+\.\s+(.*)/);
+      if (olMatch) {
+        html += '<ol>';
+        while (i < lines.length) {
+          const lm = lines[i].match(/^\d+\.\s+(.*)/);
+          if (!lm) break;
+          html += `<li>${lm[1]}</li>`;
+          i++;
+        }
+        html += '</ol>';
+        continue;
+      }
+
+      // Bulleted list items (- item)
+      const ulMatch = line.match(/^-\s+(.*)/);
+      if (ulMatch) {
+        html += '<ul>';
+        while (i < lines.length) {
+          const lm = lines[i].match(/^-\s+(.*)/);
+          if (!lm) break;
+          html += `<li>${lm[1]}</li>`;
+          i++;
+        }
+        html += '</ul>';
+        continue;
+      }
+
+      // Headings
+      if (line.startsWith('# ')) {
+        html += `<h1>${line.slice(2)}</h1>`;
+      } else if (line.startsWith('## ')) {
+        html += `<h2>${line.slice(3)}</h2>`;
+      } else if (line.trim()) {
+        html += `<p>${line}</p>`;
+      } else {
+        // Empty line — preserve as a blank paragraph
+        html += `<p><br></p>`;
+      }
+      i++;
+    }
+
+    // Handle Bold & Italic BEFORE variables
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
 
-    // 3. Handle variables (pills) last — they now sit inside formatting tags
+    // Handle variables (pills) LAST
     html = html.replace(/{{([^}]+)}}/g, (match) => {
       const code = match.trim();
       const cleanLabel = code.replace(/{{|}}/g, '').trim();
@@ -74,9 +115,45 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
 
       const el = node as HTMLElement;
 
-      // For pills: return just the data-code, don't recurse into children
+      // For pills: return just the data-code, don't recurse
       if (el.classList.contains('pill-chip')) {
         return el.getAttribute('data-code') || '';
+      }
+
+      // Ordered list: number each <li> child
+      const tag = el.tagName.toLowerCase();
+      if (tag === 'ol') {
+        let result = '';
+        let index = 1;
+        el.childNodes.forEach(child => {
+          if (child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName.toLowerCase() === 'li') {
+            let liContent = '';
+            child.childNodes.forEach(c => { liContent += walk(c); });
+            result += `${index}. ${liContent}\n`;
+            index++;
+          }
+        });
+        return result;
+      }
+
+      // Unordered list
+      if (tag === 'ul') {
+        let result = '';
+        el.childNodes.forEach(child => {
+          if (child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName.toLowerCase() === 'li') {
+            let liContent = '';
+            child.childNodes.forEach(c => { liContent += walk(c); });
+            result += `- ${liContent}\n`;
+          }
+        });
+        return result;
+      }
+
+      // Skip standalone <li> (already handled by ol/ul)
+      if (tag === 'li') {
+        let content = '';
+        el.childNodes.forEach(child => { content += walk(child); });
+        return content;
       }
 
       let content = '';
@@ -84,7 +161,6 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
         content += walk(child);
       });
 
-      const tag = el.tagName.toLowerCase();
       if (tag === 'strong' || tag === 'b') return `**${content}**`;
       if (tag === 'em' || tag === 'i') return `*${content}*`;
       if (tag === 'u') return `<u>${content}</u>`;
@@ -295,7 +371,7 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
         onInput={triggerChange}
         onDrop={onDrop}
         onDragOver={(e) => e.preventDefault()}
-        className="flex-1 p-8 bg-white overflow-y-auto outline-none text-[16px] text-gray-800 leading-relaxed white-space-pre-wrap cursor-text empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none empty:before:italic [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-gray-900 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-gray-800 [&_p]:m-0 [&_strong]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline min-h-0"
+        className="flex-1 p-8 bg-white overflow-y-auto outline-none text-[16px] text-gray-800 leading-relaxed white-space-pre-wrap cursor-text empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none empty:before:italic [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-gray-900 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-gray-800 [&_p]:m-0 [&_strong]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_ol]:list-decimal [&_ol]:pl-8 [&_ol]:my-2 [&_ul]:list-disc [&_ul]:pl-8 [&_ul]:my-2 [&_li]:mb-1 min-h-0"
         style={{
           whiteSpace: 'pre-wrap',
           fontFamily: '"Times New Roman", Times, serif',

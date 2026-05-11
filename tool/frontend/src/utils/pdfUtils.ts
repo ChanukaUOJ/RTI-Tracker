@@ -117,9 +117,36 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
       cursorY = renderRichText(title, margin, cursorY, contentWidth, 7, true);
       cursorY += 4; // Extra space after headings
     } else {
-      doc.setFontSize(11);
-      cursorY = renderRichText(line.trim(), margin, cursorY, contentWidth, 5, false);
-      cursorY += 6; // Paragraph spacing
+      // Check for numbered list items (1. item, 2. item)
+      const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+      // Check for bulleted list items (- item)
+      const ulMatch = line.match(/^-\s+(.*)/);
+
+      if (olMatch) {
+        doc.setFontSize(11);
+        const listIndent = margin + 8;
+        const listContentWidth = contentWidth - 8;
+        // Render the number
+        doc.setFont('times', 'normal');
+        doc.text(`${olMatch[1]}.`, margin, cursorY);
+        // Render the list item content
+        cursorY = renderRichText(olMatch[2], listIndent, cursorY, listContentWidth, 5, false);
+        cursorY += 4;
+      } else if (ulMatch) {
+        doc.setFontSize(11);
+        const listIndent = margin + 8;
+        const listContentWidth = contentWidth - 8;
+        // Render the bullet
+        doc.setFont('times', 'normal');
+        doc.text('•', margin + 2, cursorY);
+        // Render the list item content
+        cursorY = renderRichText(ulMatch[1], listIndent, cursorY, listContentWidth, 5, false);
+        cursorY += 4;
+      } else {
+        doc.setFontSize(11);
+        cursorY = renderRichText(line.trim(), margin, cursorY, contentWidth, 5, false);
+        cursorY += 6; // Paragraph spacing
+      }
     }
   });
 
