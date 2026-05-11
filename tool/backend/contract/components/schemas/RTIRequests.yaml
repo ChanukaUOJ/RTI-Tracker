@@ -49,6 +49,17 @@ RTIRequestResponse:
       $ref: "receivers.yaml#/ReceiverShortResponse"
     rtiTemplate:
       $ref: "RTITemplates.yaml#/RTITemplateShortResponse"
+    currentStatus:
+      type: [ "string", "null" ]
+      example: Pending
+      description: The name of the most recent RTI status of this request, or null if
+        no status has been recorded yet.
+    currentStatusUpdatedAt:
+      type: [ "string", "null" ]
+      format: date-time
+      example: "2026-05-09T03:14:44.547287Z"
+      description: ISO 8601 timestamp of when the current status was last updated, or
+        null if no status exists.
     createdAt:
       type: string
       format: date-time

@@ -48,6 +48,8 @@
                 id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                 title: Education Data Request
                 file: templates/v2/edu_data.pdf
+              currentStatus: Pending
+              currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
               createdAt: "2026-05-09T03:14:44.547287Z"
               updatedAt: "2026-05-09T03:14:44.547287Z"
       "401":
@@ -102,6 +104,8 @@
                     id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                     title: Education Data Request
                     file: templates/v2/edu_data.pdf
+                  currentStatus: Pending
+                  currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
                   createdAt: "2026-05-09T03:14:44.547287Z"
                   updatedAt: "2026-05-09T03:14:44.547287Z"
               pagination:
@@ -158,6 +162,8 @@
                 id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                 title: Education Data Request
                 file: templates/v2/edu_data.pdf
+              currentStatus: Pending
+              currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
               createdAt: "2026-05-09T03:14:44.547287Z"
               updatedAt: "2026-05-09T03:14:44.547287Z"
       "401":
@@ -217,6 +223,8 @@
                 id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                 title: Education Data Request
                 file: templates/v2/edu_data.pdf
+              currentStatus: Pending
+              currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
               createdAt: "2026-03-31T09:00:00Z"
               updatedAt: "2026-04-01T10:00:00Z"
       "401":
