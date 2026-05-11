@@ -1,0 +1,172 @@
+/rti_requests/{id}/histories:
+  # Get all history records for an RTI request
+  get:
+    summary: List all history records for an RTI request
+    operationId: listRTIRequestHistories
+    description: Returns a paginated list of all history records for a specific RTI request.
+    tags:
+      - RTI Request Histories
+    security:
+      - opaqueBearerToken: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the RTI Request
+      - $ref: "../components/parameters/Pagination.yaml#/PageParam"
+      - $ref: "../components/parameters/Pagination.yaml#/PageSizeParam"
+    responses:
+      "200":
+        description: A paginated list of history records.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryListResponse"
+            example:
+              data:
+                - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  rtiRequestId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  rtiStatus:
+                    id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    name: Pending
+                    code: PENDING
+                  direction: sent
+                  description: Initial request sent to the department.
+                  entryTime: "2026-03-31T09:00:00Z"
+                  files: ["uploads/doc1.pdf"]
+                  createdAt: "2026-03-31T09:00:00Z"
+                  updatedAt: "2026-03-31T09:00:00Z"
+              pagination:
+                page: 1
+                pageSize: 10
+                totalItems: 1
+                totalPages: 1
+      "401":
+        $ref: "../components/responses/Errors.yaml#/Unauthorized"
+      "404":
+        $ref: "../components/responses/Errors.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses/Errors.yaml#/InternalServerError"
+
+  # Create a new history record
+  post:
+    summary: Create a new history record
+    operationId: createRTIRequestHistory
+    description: Creates a new history record for an RTI request. This is a multipart/form-data request.
+    tags:
+      - RTI Request Histories
+    security:
+      - opaqueBearerToken: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the RTI Request
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryRequest"
+    responses:
+      "201":
+        description: History record created successfully.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryResponse"
+      "401":
+        $ref: "../components/responses/Errors.yaml#/Unauthorized"
+      "404":
+        $ref: "../components/responses/Errors.yaml#/NotFound"
+      "422":
+        $ref: "../components/responses/Errors.yaml#/UnprocessableEntity"
+      "500":
+        $ref: "../components/responses/Errors.yaml#/InternalServerError"
+
+/rti_requests/{rti_id}/histories/{history_id}:
+  # Update a history record
+  put:
+    summary: Update a history record
+    operationId: updateRTIRequestHistory
+    description: Updates an existing history record. This is a multipart/form-data request.
+    tags:
+      - RTI Request Histories
+    security:
+      - opaqueBearerToken: []
+    parameters:
+      - name: rti_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the RTI Request
+      - name: history_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the RTI Status History record
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryUpdateRequest"
+    responses:
+      "200":
+        description: History record updated successfully.
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryResponse"
+      "401":
+        $ref: "../components/responses/Errors.yaml#/Unauthorized"
+      "404":
+        $ref: "../components/responses/Errors.yaml#/NotFound"
+      "422":
+        $ref: "../components/responses/Errors.yaml#/UnprocessableEntity"
+      "500":
+        $ref: "../components/responses/Errors.yaml#/InternalServerError"
+
+  # Delete a history record
+  delete:
+    summary: Delete a history record
+    operationId: deleteRTIRequestHistory
+    description: Permanently deletes a history record.
+    tags:
+      - RTI Request Histories
+    security:
+      - opaqueBearerToken: []
+    parameters:
+      - name: rti_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the RTI Request
+      - name: history_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID of the RTI Status History record
+    responses:
+      "204":
+        description: History record deleted successfully.
+      "401":
+        $ref: "../components/responses/Errors.yaml#/Unauthorized"
+      "404":
+        $ref: "../components/responses/Errors.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses/Errors.yaml#/InternalServerError"
