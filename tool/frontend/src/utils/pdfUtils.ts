@@ -26,18 +26,23 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
   let cursorY = 25;
 
 
-  // Helper to render text with markdown support (bold, italic)
+  // Helper to render text with markdown support (bold, italic, underline)
   const renderRichText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number = 5, initialBold: boolean = false): number => {
-    const tokens: { text: string; style: string }[] = [];
+    const tokens: { text: string; style: string; underline: boolean }[] = [];
 
     // Split by all possible markdown markers, preserving them
-    const segments = text.split(/(\*\*\*|___|\*\*|__|\*|_)/);
+    const segments = text.split(/(<u>|<\/u>|\*\*\*|___|\*\*|__|\*|_)/);
 
     let isBold = initialBold;
     let isItalic = false;
+    let isUnderline = false;
 
     segments.forEach(seg => {
-      if (seg === '***' || seg === '___') {
+      if (seg === '<u>') {
+        isUnderline = true;
+      } else if (seg === '</u>') {
+        isUnderline = false;
+      } else if (seg === '***' || seg === '___') {
         isBold = !isBold;
         isItalic = !isItalic;
       } else if (seg === '**' || seg === '__') {
@@ -50,7 +55,7 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
         else if (isBold) style = 'bold';
         else if (isItalic) style = 'italic';
 
-        tokens.push({ text: seg, style });
+        tokens.push({ text: seg, style, underline: isUnderline });
       }
     });
 
@@ -58,7 +63,7 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
     let currentY = y;
 
     tokens.forEach(token => {
-      doc.setFont('helvetica', token.style);
+      doc.setFont('times', token.style);
 
       const words = token.text.split(/(\s+)/);
       words.forEach(word => {
@@ -72,11 +77,17 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
           if (currentY > 270) {
             doc.addPage();
             currentY = 25;
-            doc.setFont('helvetica', token.style);
+            doc.setFont('times', token.style);
           }
         }
 
         doc.text(safeWord, currentX, currentY);
+        
+        if (token.underline) {
+          doc.setLineWidth(0.2);
+          doc.line(currentX, currentY + 0.5, currentX + wordWidth, currentY + 0.5);
+        }
+
         currentX += wordWidth;
       });
     });
