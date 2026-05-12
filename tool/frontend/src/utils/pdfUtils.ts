@@ -21,17 +21,18 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
     format: 'a4'
   });
 
-  const margin = 25;
-  const contentWidth = 160;
-  let cursorY = 25;
+  const margin = 19;
+  const contentWidth = 170
+  let cursorY = 30;
 
   interface RenderState {
     bold: boolean;
     italic: boolean;
     underline: boolean;
+    align: 'left' | 'center' | 'right' | 'justify';
   }
 
-  // Helper to render text with markdown support (bold, italic, underline)
+  // Helper to render text with markdown support (bold, italic, underline, alignment)
   const renderRichText = (
     text: string,
     x: number,
@@ -45,7 +46,7 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
     // Split by all possible markdown markers, preserving them
     const segments = text.split(/(<u>|<\/u>|\*\*\*|___|\*\*|__|\*|_)/);
 
-    let { bold: isBold, italic: isItalic, underline: isUnderline } = initialState;
+    let { bold: isBold, italic: isItalic, underline: isUnderline, align: currentAlign } = initialState;
     let hasRenderedText = false;
 
     segments.forEach(seg => {
@@ -71,72 +72,121 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
       }
     });
 
-    let currentX = x;
     let currentY = y;
+
+    // Group tokens into lines based on maxWidth
+    const lines: { tokens: any[]; width: number }[] = [];
+    let currentLine: any[] = [];
+    let currentLineWidth = 0;
 
     tokens.forEach(token => {
       doc.setFont('times', token.style);
-
       const words = token.text.split(/(\s+)/);
+
       words.forEach(word => {
         if (word === '') return;
         const safeWord = word.replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, ' ');
         const wordWidth = doc.getTextWidth(safeWord);
 
-        if (currentX + wordWidth > x + maxWidth && safeWord.trim().length > 0) {
-          currentX = x;
-          currentY += lineHeight;
-          if (currentY > 270) {
-            doc.addPage();
-            currentY = 25;
-            doc.setFont('times', token.style);
-          }
+        if (currentLineWidth + wordWidth > maxWidth && safeWord.trim().length > 0) {
+          lines.push({ tokens: currentLine, width: currentLineWidth });
+          currentLine = [];
+          currentLineWidth = 0;
         }
 
-        doc.text(safeWord, currentX, currentY);
+        currentLine.push({ ...token, text: safeWord, width: wordWidth });
+        currentLineWidth += wordWidth;
+      });
+    });
+
+    if (currentLine.length > 0) {
+      lines.push({ tokens: currentLine, width: currentLineWidth });
+    }
+
+    // Render lines with alignment
+    lines.forEach((line, index) => {
+      let startX = x;
+      if (currentAlign === 'center') {
+        startX = x + (maxWidth - line.width) / 2;
+      } else if (currentAlign === 'right') {
+        startX = x + (maxWidth - line.width);
+      }
+
+      let drawX = startX;
+      line.tokens.forEach(token => {
+        doc.setFont('times', token.style);
+        doc.text(token.text, drawX, currentY);
 
         if (token.underline) {
           doc.setLineWidth(0.2);
-          doc.line(currentX, currentY + 0.5, currentX + wordWidth, currentY + 0.5);
+          doc.line(drawX, currentY + 0.5, drawX + token.width, currentY + 0.5);
         }
-
-        currentX += wordWidth;
+        drawX += token.width;
       });
+
+      if (index < lines.length - 1) {
+        currentY += lineHeight;
+        if (currentY > 270) {
+          doc.addPage();
+          currentY = 30;
+        }
+      }
     });
 
     return {
       endY: currentY,
       hasRenderedText,
-      state: { bold: isBold, italic: isItalic, underline: isUnderline }
+      state: { bold: isBold, italic: isItalic, underline: isUnderline, align: currentAlign }
     };
   };
 
   const lines = finalMarkdown.split('\n');
-  let currentState: RenderState = { bold: false, italic: false, underline: false };
+  let currentState: RenderState = { bold: false, italic: false, underline: false, align: 'left' };
+  let activeAlign: 'left' | 'center' | 'right' | 'justify' = 'left';
 
   lines.forEach(line => {
-    const trimmedLine = line.trim();
-    if (trimmedLine === '') {
-      cursorY += 6;
+    let trimmedLine = line.trim();
+
+    // Detect opening alignment tag
+    const openMatch = trimmedLine.match(/<div style="text-align: (.*?)">/);
+    if (openMatch) {
+      activeAlign = openMatch[1] as any;
+      trimmedLine = trimmedLine.replace(/<div style="text-align: (.*?)">/, '');
+    }
+
+    // Detect closing alignment tag
+    const hasClosingTag = trimmedLine.includes('</div>');
+    if (hasClosingTag) {
+      trimmedLine = trimmedLine.replace('</div>', '');
+    }
+
+    const isLineEmpty = trimmedLine === '';
+
+    if (isLineEmpty) {
+      // Only add spacing if we didn't just consume a tag on an otherwise empty line
+      if (!openMatch && !hasClosingTag) {
+        cursorY += 6;
+      }
+      if (hasClosingTag) activeAlign = 'left';
       return;
     }
 
     if (cursorY > 270) {
       doc.addPage();
-      cursorY = 25;
+      cursorY = 30;
     }
 
-    if (line.startsWith('#')) {
-      const level = line.startsWith('##') ? 2 : 1;
-      const title = line.replace(/^#+\s*/, '');
+    if (trimmedLine.startsWith('#')) {
+      const level = trimmedLine.startsWith('##') ? 2 : 1;
+      const title = trimmedLine.replace(/^#+\s*/, '');
 
       doc.setFontSize(level === 1 ? 16 : 14);
-      const result = renderRichText(title, margin, cursorY, contentWidth, 7, { bold: true, italic: false, underline: false });
+      const result = renderRichText(title, margin, cursorY, contentWidth, 7, { ...currentState, bold: true, align: activeAlign });
       cursorY = result.endY;
       cursorY += 4;
     } else {
-      const olMatch = line.match(/^(\d+)\.\s+(.*)/);
-      const ulMatch = line.match(/^-\s+(.*)/);
+      const olMatch = trimmedLine.match(/^(\d+)\.\s+(.*)/);
+      const ulMatch = trimmedLine.match(/^-\s+(.*)/);
 
       if (olMatch) {
         doc.setFontSize(11);
@@ -144,9 +194,8 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
         const listContentWidth = contentWidth - 8;
         doc.setFont('times', 'normal');
         doc.text(`${olMatch[1]}.`, margin, cursorY);
-        const result = renderRichText(olMatch[2], listIndent, cursorY, listContentWidth, 5, currentState);
+        const result = renderRichText(olMatch[2], listIndent, cursorY, listContentWidth, 5, { ...currentState, align: activeAlign });
         cursorY = result.endY;
-        currentState = result.state;
         cursorY += 4;
       } else if (ulMatch) {
         doc.setFontSize(11);
@@ -154,20 +203,23 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
         const listContentWidth = contentWidth - 8;
         doc.setFont('times', 'normal');
         doc.text('•', margin + 2, cursorY);
-        const result = renderRichText(ulMatch[1], listIndent, cursorY, listContentWidth, 5, currentState);
+        const result = renderRichText(ulMatch[1], listIndent, cursorY, listContentWidth, 5, { ...currentState, align: activeAlign });
         cursorY = result.endY;
-        currentState = result.state;
         cursorY += 4;
       } else {
         doc.setFontSize(11);
-        const result = renderRichText(line.trim(), margin, cursorY, contentWidth, 5, currentState);
+        const result = renderRichText(trimmedLine, margin, cursorY, contentWidth, 5, { ...currentState, align: activeAlign });
         cursorY = result.endY;
-        currentState = result.state;
 
         if (result.hasRenderedText) {
           cursorY += 6;
         }
       }
+    }
+
+    // Reset alignment after the line if we found a closing tag on this line
+    if (hasClosingTag) {
+      activeAlign = 'left';
     }
   });
 
@@ -176,7 +228,7 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
     const pageCount = doc.getNumberOfPages();
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
-    const margin = 25;
+    const margin = 19;
 
     // Load logo
     const logoData = await new Promise<string | null>((resolve) => {
@@ -198,12 +250,12 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
 
       // --- Header ---
       if (logoData) {
-        doc.addImage(logoData, 'PNG', margin, 5, 30, 10);
+        doc.addImage(logoData, 'PNG', margin, 5, 45, 15);
       }
 
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.1);
-      doc.line(margin, 15, pageWidth - margin, 15);
+      doc.line(margin, 20, pageWidth - margin, 20);
 
       // Footer
       doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);

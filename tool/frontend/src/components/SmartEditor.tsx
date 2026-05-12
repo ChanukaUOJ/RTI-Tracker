@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Bold, Italic, Underline, Heading1, Heading2, Type } from 'lucide-react';
+import { Bold, Italic, Underline, Heading1, Heading2, Type, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
 
 export interface SmartEditorRef {
   getMarkdown: () => string;
@@ -28,11 +28,9 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
   const editorRef = useRef<HTMLDivElement>(null);
 
   const createPillHtml = (code: string, name: string) => {
-    return `<span class="pill-chip inline decoration-inherit" data-code="${code}" contenteditable="false" style="font-weight: inherit; font-style: inherit; text-decoration: inherit;">` +
-      `<span class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 border border-blue-200 rounded mx-0.5 bg-blue-100 text-blue-800 text-xs align-baseline cursor-default select-none transition-colors" style="font-weight: inherit; font-style: inherit; text-decoration: inherit;">` +
-      `<span style="font-weight: inherit; font-style: inherit; text-decoration: inherit;">${name}</span>` +
-      `<span class="pill-remove hover:bg-blue-300 rounded px-1 cursor-pointer opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center font-bold ml-0.5" onclick="this.parentElement.parentElement.remove()">×</span>` +
-      `</span>` +
+    return `<span class="pill-chip inline-flex items-center px-2 py-0.5 mx-1 rounded-md text-xs bg-blue-100 text-blue-800 border border-blue-200 select-none cursor-default" data-code="${code}" contenteditable="false" style="vertical-align: middle; display: inline-flex; font-weight: inherit; font-style: inherit; text-decoration: inherit;">` +
+      `<span style="font-weight: inherit; font-style: inherit;">${name}</span>` +
+      `<span class="pill-remove ml-1 hover:bg-blue-300 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer transition-colors" onclick="this.parentElement.remove()" style="font-weight: bold; font-style: normal;">×</span>` +
       `</span>`;
   };
 
@@ -87,6 +85,9 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
       }
       i++;
     }
+
+    // Handle alignment divs
+    html = html.replace(/<div style="text-align: (.*?)">([\s\S]*?)<\/div>/g, '<div style="text-align: $1">$2</div>');
 
     // Handle Bold & Italic BEFORE variables
     html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
@@ -176,9 +177,24 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
       if (tag === 'strong' || tag === 'b') return wrapInTags(content, '**', '**');
       if (tag === 'em' || tag === 'i') return wrapInTags(content, '*', '*');
       if (tag === 'u') return wrapInTags(content, '<u>', '</u>');
-      if (tag === 'h1') return `# ${content.trim()}\n`;
-      if (tag === 'h2') return `## ${content.trim()}\n`;
-      if (tag === 'p' || tag === 'div') return `${content}\n`;
+      if (tag === 'h1') {
+        const align = el.style.textAlign;
+        const headerMd = `# ${content.trim()}\n`;
+        return align && align !== 'left' ? `<div style="text-align: ${align}">${headerMd}</div>\n` : headerMd;
+      }
+      if (tag === 'h2') {
+        const align = el.style.textAlign;
+        const headerMd = `## ${content.trim()}\n`;
+        return align && align !== 'left' ? `<div style="text-align: ${align}">${headerMd}</div>\n` : headerMd;
+      }
+      // Support alignment in p and div
+      if (tag === 'p' || tag === 'div') {
+        const align = el.style.textAlign;
+        if (align && align !== 'left') {
+          return `<div style="text-align: ${align}">${content}</div>\n`;
+        }
+        return `${content}\n`;
+      }
       if (tag === 'br') return '\n';
 
       return content;
@@ -189,13 +205,6 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
   };
 
   const cleanEditorHtml = (editor: HTMLElement) => {
-    // Clean pills
-    editor.querySelectorAll('.pill-chip').forEach(pill => {
-      pill.querySelectorAll('strong, b, em, i, u').forEach(tag => {
-        tag.replaceWith(...Array.from(tag.childNodes));
-      });
-    });
-
     // Remove empty formatting tags
     editor.querySelectorAll('strong, b, em, i, u').forEach(tag => {
       if (tag.textContent?.trim() === '' && tag.children.length === 0) {
@@ -208,12 +217,29 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
     const editor = editorRef.current;
     if (!editor) return;
 
-    if (['bold', 'italic', 'underline'].includes(command)) {
+    const isFormatting = ['bold', 'italic', 'underline'].includes(command);
+    const isAlignment = ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'].includes(command);
+
+    if (isAlignment) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        let container = selection.getRangeAt(0).startContainer;
+        const parent = container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
+        const block = (parent as HTMLElement)?.closest('p, div, h1, h2');
+        
+        if (block) {
+          const align = command.replace('justify', '').toLowerCase();
+          const finalAlign = align === 'full' ? 'justify' : align;
+          (block as HTMLElement).style.textAlign = finalAlign;
+        } else {
+          // Fallback to execCommand if no block found
+          document.execCommand(command, false, value);
+        }
+      }
+    } else if (isFormatting) {
       const pills = editor.querySelectorAll('.pill-chip');
       pills.forEach(pill => pill.setAttribute('contenteditable', 'true'));
-
       document.execCommand(command, false, value);
-
       pills.forEach(pill => pill.setAttribute('contenteditable', 'false'));
       cleanEditorHtml(editor);
     } else {
@@ -382,6 +408,39 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
             title="Normal Text"
           >
             <Type className="w-4 h-4" />
+          </button>
+          <div className="w-px h-4 bg-gray-200 mx-1" />
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('justifyLeft')}
+            className="p-1.5 hover:bg-white hover:shadow-sm rounded border border-transparent hover:border-gray-200 text-gray-600 transition-all"
+            title="Align Left"
+          >
+            <AlignLeft className="w-4 h-4" />
+          </button>
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('justifyCenter')}
+            className="p-1.5 hover:bg-white hover:shadow-sm rounded border border-transparent hover:border-gray-200 text-gray-600 transition-all"
+            title="Align Center"
+          >
+            <AlignCenter className="w-4 h-4" />
+          </button>
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('justifyRight')}
+            className="p-1.5 hover:bg-white hover:shadow-sm rounded border border-transparent hover:border-gray-200 text-gray-600 transition-all"
+            title="Align Right"
+          >
+            <AlignRight className="w-4 h-4" />
+          </button>
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('justifyFull')}
+            className="p-1.5 hover:bg-white hover:shadow-sm rounded border border-transparent hover:border-gray-200 text-gray-600 transition-all"
+            title="Justify"
+          >
+            <AlignJustify className="w-4 h-4" />
           </button>
         </div>
       )}
