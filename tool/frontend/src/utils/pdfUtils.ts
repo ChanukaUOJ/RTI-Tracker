@@ -25,7 +25,6 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
   const contentWidth = 160;
   let cursorY = 25;
 
-
   interface RenderState {
     bold: boolean;
     italic: boolean;
@@ -132,14 +131,11 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
       const title = line.replace(/^#+\s*/, '');
 
       doc.setFontSize(level === 1 ? 16 : 14);
-      // Headings reset state and are bold by default
       const result = renderRichText(title, margin, cursorY, contentWidth, 7, { bold: true, italic: false, underline: false });
       cursorY = result.endY;
-      cursorY += 4; // Extra space after headings
+      cursorY += 4;
     } else {
-      // Check for numbered list items (1. item, 2. item)
       const olMatch = line.match(/^(\d+)\.\s+(.*)/);
-      // Check for bulleted list items (- item)
       const ulMatch = line.match(/^-\s+(.*)/);
 
       if (olMatch) {
@@ -168,7 +164,6 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
         cursorY = result.endY;
         currentState = result.state;
 
-        // add paragraph spacing if the line actually contained visible text
         if (result.hasRenderedText) {
           cursorY += 6;
         }
@@ -176,16 +171,58 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
     }
   });
 
+  // Add Header and Footer to all pages
+  const addHeaderFooter = async (doc: jsPDF) => {
+    const pageCount = doc.getNumberOfPages();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 25;
+
+    // Load logo
+    const logoData = await new Promise<string | null>((resolve) => {
+      const img = new Image();
+      img.src = '/logo_header.png';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => resolve(null);
+    });
+
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+
+      // --- Header ---
+      if (logoData) {
+        doc.addImage(logoData, 'PNG', margin, 5, 30, 10);
+      }
+
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.1);
+      doc.line(margin, 15, pageWidth - margin, 15);
+
+      // Footer
+      doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+      doc.setFontSize(8);
+      doc.setTextColor(90, 90, 90);
+      doc.setFont('helvetica', 'normal');
+      const footerText = 'GA 00231106  |  248/201 Hill Street, Dehiwela, Sri Lanka  |  +94 70 3729895  |  contact@datafoundation.lk';
+      doc.text(footerText, pageWidth - margin, pageHeight - 10, { align: 'right' });
+    }
+  };
+
+  await addHeaderFooter(doc);
+
   const blob = doc.output('blob');
   const fileName = `${(title || 'rti_request').replace(/\s+/g, '_')}.pdf`;
 
   return { blob, fileName, finalMarkdown };
 };
 
-/**
- * Triggers a browser download for a given Blob.
- * Handles object URL creation and cleanup automatically.
- */
 export const downloadBlob = (blob: Blob, fileName: string): void => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
