@@ -446,6 +446,64 @@ async def test_get_rti_requests_page_out_of_bounds(rti_request_db, make_file_ser
     assert response.data == []
 
 @pytest.mark.asyncio
+async def test_get_rti_requests_search_by_title(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific titles
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample1 Report"
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample2 Report"
+    ))
+
+    # Search for "Sample1"
+    response = service.get_rti_requests(search_query="Sample1")
+    assert len(response.data) == 1
+    assert response.data[0].title == "Sample1 Report"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_description(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by description."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific descriptions
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R1", description="Contains secret data"
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R2", description="Public info"
+    ))
+
+    # Search for "secret"
+    response = service.get_rti_requests(search_query="secret")
+    assert len(response.data) == 1
+    assert response.data[0].title == "R1"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_no_results(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that searching for a non-existent term returns empty data."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Something"
+    ))
+
+    # Search for "missing"
+    response = service.get_rti_requests(search_query="missing")
+    assert len(response.data) == 0
+    assert response.pagination.total_items == 0
+
+@pytest.mark.asyncio
 async def test_get_rti_requests_internal_error(rti_request_db, monkeypatch, make_file_service):
     """Simulate a database failure during listing and ensure InternalServerException is raised."""
     service = RTIRequestService(session=rti_request_db, file_service=make_file_service())

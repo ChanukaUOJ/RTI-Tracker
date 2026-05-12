@@ -124,3 +124,5 @@ components:
       $ref: "./components/parameters/Pagination.yaml#/PageParam"
     PageSizeParam:
       $ref: "./components/parameters/Pagination.yaml#/PageSizeParam"
+    SearchQueryParam:
+      $ref: "./components/parameters/Pagination.yaml#/SearchQueryParam"

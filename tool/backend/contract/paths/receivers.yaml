@@ -61,6 +61,7 @@
     parameters:
       - $ref: "../components/parameters/Pagination.yaml#/PageParam"
       - $ref: "../components/parameters/Pagination.yaml#/PageSizeParam"
+      - $ref: "../components/parameters/Pagination.yaml#/SearchQueryParam"
     responses:
       "200":
         description: A paginated list of receivers.

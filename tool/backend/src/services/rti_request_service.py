@@ -1,9 +1,10 @@
+from typing import Optional
 import os
 import logging
 from uuid import UUID, uuid4
 from typing import Dict
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select, Session, func
+from sqlmodel import select, Session, func, or_
 from sqlalchemy.orm import joinedload
 from src.models import PaginationModel
 from src.services.github_file_service import GithubFileService
@@ -140,28 +141,27 @@ class RTIRequestService:
         self,
         *,
         page: int = 1,
-        page_size: int = 10
+        page_size: int = 10,
+        search_query: Optional[str] = None
     ) -> RTIRequestListResponse:
         """Fetches a paginated list of RTI Requests."""
         try:
             offset = (page - 1) * page_size
 
-            # 1. Subquery to rank history records
-            # We find the ID of the 'rank 1' (latest) record for every request
+            # subquery to rank history records
             rank_subq = (
                 select(
                     RTIStatusHistory.id.label("history_id"),
                     RTIStatusHistory.rti_request_id,
                     func.row_number().over(
                         partition_by=RTIStatusHistory.rti_request_id,
-                        order_by=[RTIStatusHistory.entry_time.desc(), RTIStatusHistory.id.desc()]
+                        order_by=[RTIStatusHistory.entry_time.desc()]
                     ).label("rn")
                 )
                 .subquery()
             )
 
-            # 2. Main query
-            # Join ONLY where rank is 1. This avoids duplicates automatically.
+            # main query
             statement_records = (
                 select(RTIRequest, RTIStatusHistory, RTIStatus)
                 .options(
@@ -172,6 +172,21 @@ class RTIRequestService:
                 .outerjoin(rank_subq, (RTIRequest.id == rank_subq.c.rti_request_id) & (rank_subq.c.rn == 1))
                 .outerjoin(RTIStatusHistory, RTIStatusHistory.id == rank_subq.c.history_id)
                 .outerjoin(RTIStatus, RTIStatusHistory.status_id == RTIStatus.id)
+            )
+
+            # Apply search filter if provided
+            if search_query:
+                query = search_query.strip()
+                statement_records = statement_records.where(
+                    or_(
+                        RTIRequest.title.icontains(query),
+                        RTIRequest.description.icontains(query)
+                    )
+                )
+
+            # finalize records query
+            statement_records = (
+                statement_records
                 .order_by(RTIRequest.created_at.desc())
                 .offset(offset)
                 .limit(page_size)
@@ -198,6 +213,16 @@ class RTIRequestService:
             
             # fetch the total record count
             statement_count = select(func.count()).select_from(RTIRequest)
+            
+            if search_query:
+                query = search_query.strip()
+                statement_count = statement_count.where(
+                    or_(
+                        RTIRequest.title.icontains(query),
+                        RTIRequest.description.icontains(query)
+                    )
+                )
+                
             total_items = self.session.exec(statement_count).one()
 
             # pagination response
