@@ -24,7 +24,8 @@
         content:
           application/json:
             schema:
-              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryListResponse"
+              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryListR\
+                esponse"
             example:
               data:
                 - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -35,7 +36,7 @@
                   direction: sent
                   description: Initial request sent to the department.
                   entryTime: "2026-03-31T09:00:00Z"
-                  files: ["uploads/doc1.pdf"]
+                  files: [ "uploads/doc1.pdf" ]
                   createdAt: "2026-03-31T09:00:00Z"
                   updatedAt: "2026-03-31T09:00:00Z"
               pagination:
@@ -54,7 +55,8 @@
   post:
     summary: Create a new history record
     operationId: createRTIRequestHistory
-    description: Creates a new history record for an RTI request. This is a multipart/form-data request.
+    description: Creates a new history record for an RTI request. This is a
+      multipart/form-data request.
     tags:
       - RTI Request Histories
     security:
@@ -72,14 +74,16 @@
       content:
         multipart/form-data:
           schema:
-            $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryRequest"
+            $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryReque\
+              st"
     responses:
       "201":
         description: History record created successfully.
         content:
           application/json:
             schema:
-              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryResponse"
+              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryRespo\
+                nse"
       "401":
         $ref: "../components/responses/Errors.yaml#/Unauthorized"
       "404":
@@ -119,14 +123,16 @@
       content:
         multipart/form-data:
           schema:
-            $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryUpdateRequest"
+            $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryUpdat\
+              eRequest"
     responses:
       "200":
         description: History record updated successfully.
         content:
           application/json:
             schema:
-              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryResponse"
+              $ref: "../components/schemas/rti-request-histories.yaml#/RTIRequestHistoryRespo\
+                nse"
       "401":
         $ref: "../components/responses/Errors.yaml#/Unauthorized"
       "404":

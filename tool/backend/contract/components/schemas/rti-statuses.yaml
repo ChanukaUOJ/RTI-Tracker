@@ -47,6 +47,20 @@ RTIStatusShortResponse:
       example: Delivery
       description: Name of the status.
 
+RTICurrentStatusResponse:
+  allOf:
+    - $ref: "#/RTIStatusShortResponse"
+    - type: object
+      required:
+        - updatedAt
+      properties:
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-03-31T09:00:00Z"
+          description: ISO 8601 timestamp of when the latest RTI Request history was
+            updated.
+
 RTIStatusListResponse:
   type: object
   properties:

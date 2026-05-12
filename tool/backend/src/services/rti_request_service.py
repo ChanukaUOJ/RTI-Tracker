@@ -4,10 +4,12 @@ from uuid import UUID, uuid4
 from typing import Dict
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select, Session, func
+from sqlalchemy.orm import joinedload
 from src.models import PaginationModel
 from src.services.github_file_service import GithubFileService
 from src.models.table_schemas.table_schemas import RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection, Receiver, Sender, RTITemplate, RTIStatusName
-from src.models.response_models.rti_requests import RTIRequestResponse, RTIRequestListResponse
+from src.models.response_models.rti_requests import RTIRequestResponse, RTIRequestListResponse, RTIRequestExpandedResponse
+from src.models.response_models import RTICurrentStatusResponse
 from src.models.request_models.rti_requests import RTIRequestRequest, RTIRequestUpdateRequest
 from src.core.exceptions import InternalServerException, BadRequestException, NotFoundException, ConflictException
 from datetime import datetime, timezone
@@ -144,9 +146,55 @@ class RTIRequestService:
         try:
             offset = (page - 1) * page_size
 
-            # fetch the records from the table
-            statement_records = select(RTIRequest).order_by(RTIRequest.created_at.desc()).offset(offset).limit(page_size)
-            results = self.session.exec(statement_records).all()
+            # 1. Subquery to rank history records
+            # We find the ID of the 'rank 1' (latest) record for every request
+            rank_subq = (
+                select(
+                    RTIStatusHistory.id.label("history_id"),
+                    RTIStatusHistory.rti_request_id,
+                    func.row_number().over(
+                        partition_by=RTIStatusHistory.rti_request_id,
+                        order_by=[RTIStatusHistory.entry_time.desc(), RTIStatusHistory.id.desc()]
+                    ).label("rn")
+                )
+                .subquery()
+            )
+
+            # 2. Main query
+            # Join ONLY where rank is 1. This avoids duplicates automatically.
+            statement_records = (
+                select(RTIRequest, RTIStatusHistory, RTIStatus)
+                .options(
+                    joinedload(RTIRequest.sender),
+                    joinedload(RTIRequest.receiver),
+                    joinedload(RTIRequest.rti_template)
+                )
+                .outerjoin(rank_subq, (RTIRequest.id == rank_subq.c.rti_request_id) & (rank_subq.c.rn == 1))
+                .outerjoin(RTIStatusHistory, RTIStatusHistory.id == rank_subq.c.history_id)
+                .outerjoin(RTIStatus, RTIStatusHistory.status_id == RTIStatus.id)
+                .order_by(RTIRequest.created_at.desc())
+                .offset(offset)
+                .limit(page_size)
+            )
+
+            results = self.session.exec(statement_records).unique().all()
+
+            data = []
+            for rti_req, history, status_obj in results:
+                current_status_data = None
+                if status_obj and history:
+                    current_status_data = RTICurrentStatusResponse(
+                        id=status_obj.id,
+                        name=status_obj.name,
+                        updated_at=history.entry_time
+                    )
+
+                data.append(
+                    RTIRequestExpandedResponse(
+                        **RTIRequestResponse.model_validate(rti_req).model_dump(),
+                        current_status=current_status_data
+                    )
+                )
             
             # fetch the total record count
             statement_count = select(func.count()).select_from(RTIRequest)
@@ -159,10 +207,9 @@ class RTIRequestService:
                 total_items=total_items,
                 total_pages=(total_items + page_size - 1) // page_size if total_items > 0 else 0
             )
-            
-            # return the final response
+
             return RTIRequestListResponse(
-                data=[RTIRequestResponse.model_validate(r) for r in results],
+                data=data,
                 pagination=pagination
             )
         except Exception as e:

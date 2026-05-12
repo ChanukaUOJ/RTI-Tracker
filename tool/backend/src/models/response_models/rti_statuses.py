@@ -36,3 +36,9 @@ class RTIStatusShortResponse(BaseModel):
 
     id: UUID = Field(..., description="Unique identifier for the RTI Status")
     name: str = Field(..., description="Name of the RTI Status")
+
+class RTICurrentStatusResponse(RTIStatusShortResponse):
+    model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True)
+
+    updated_at: datetime = Field(..., serialization_alias="updatedAt", description="ISO 8601 timestamp of when the latest RTI Request history was updated")
+    

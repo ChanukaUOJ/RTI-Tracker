@@ -1,4 +1,4 @@
-/rti-requests:
+/rti_requests:
   # Create a new RTI request
   post:
     summary: Create an RTI request
@@ -48,8 +48,6 @@
                 id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                 title: Education Data Request
                 file: templates/v2/edu_data.pdf
-              currentStatus: Pending
-              currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
               createdAt: "2026-05-09T03:14:44.547287Z"
               updatedAt: "2026-05-09T03:14:44.547287Z"
       "401":
@@ -104,8 +102,10 @@
                     id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                     title: Education Data Request
                     file: templates/v2/edu_data.pdf
-                  currentStatus: Pending
-                  currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
+                  currentStatus:
+                    id: fbbdd56c-4db5-4d43-9d0a-8a3c82e4c2c9
+                    name: Pending
+                    updatedAt: "2026-05-09T03:14:44.547287Z"
                   createdAt: "2026-05-09T03:14:44.547287Z"
                   updatedAt: "2026-05-09T03:14:44.547287Z"
               pagination:
@@ -118,7 +118,7 @@
       "500":
         $ref: "../components/responses/Errors.yaml#/InternalServerError"
 
-/rti-requests/{id}:
+/rti_requests/{id}:
   # Get a single RTI request by ID
   get:
     summary: Get an RTI request by ID
@@ -162,8 +162,6 @@
                 id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                 title: Education Data Request
                 file: templates/v2/edu_data.pdf
-              currentStatus: Pending
-              currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
               createdAt: "2026-05-09T03:14:44.547287Z"
               updatedAt: "2026-05-09T03:14:44.547287Z"
       "401":
@@ -223,8 +221,6 @@
                 id: b402c17a-8b25-4514-ba17-6b1ff79a0f08
                 title: Education Data Request
                 file: templates/v2/edu_data.pdf
-              currentStatus: Pending
-              currentStatusUpdatedAt: "2026-05-09T03:14:44.547287Z"
               createdAt: "2026-03-31T09:00:00Z"
               updatedAt: "2026-04-01T10:00:00Z"
       "401":

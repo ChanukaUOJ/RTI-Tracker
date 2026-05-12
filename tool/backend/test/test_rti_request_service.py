@@ -12,7 +12,7 @@ from src.models.table_schemas.table_schemas import (
     RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection, 
     Sender, Receiver, RTITemplate
 )
-from src.models.response_models.rti_requests import RTIRequestResponse
+from src.models.response_models.rti_requests import RTIRequestResponse, RTIRequestListResponse, RTIRequestExpandedResponse
 from src.core.exceptions import (
     InternalServerException, BadRequestException, 
     NotFoundException, ConflictException
@@ -327,12 +327,100 @@ async def test_get_rti_requests_success(rti_request_db, make_file_service, make_
     
     # Test fetching with page_size=2
     response = service.get_rti_requests(page=1, page_size=2)
+
+    assert isinstance(response, RTIRequestListResponse)
     
     assert len(response.data) == 2
     assert response.pagination.total_items == 3
     assert response.pagination.total_pages == 2
     assert response.pagination.page == 1
     assert response.pagination.page_size == 2
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_with_no_history(rti_request_db, make_file_service):
+    """Verifies that requests with no history records have null current_status."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    
+    # Manually create a request without using the service (to bypass history creation)
+    req_id = uuid.uuid4()
+    req = RTIRequest(
+        id=req_id,
+        title="No History Request",
+        sender_id=sender.id,
+        receiver_id=receiver.id,
+        file="some/file.pdf"
+    )
+    rti_request_db.add(req)
+    rti_request_db.commit()
+    
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+    response = service.get_rti_requests(page=1, page_size=10)
+    
+    # Find our request in the list
+    found = next((r for r in response.data if r.id == req_id), None)
+    assert found is not None
+    assert isinstance(found, RTIRequestExpandedResponse)
+    assert found.current_status is None
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_latest_status_only(rti_request_db, make_file_service):
+    """Verifies that only the latest status is returned for a request with multiple history records."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    
+    # 1. Create a request
+    req_id = uuid.uuid4()
+    req = RTIRequest(
+        id=req_id,
+        title="Multiple History Request",
+        sender_id=sender.id,
+        receiver_id=receiver.id,
+        file="some/file.pdf"
+    )
+    rti_request_db.add(req)
+    rti_request_db.commit()
+    
+    # 2. Add multiple status records
+    # First, ensure we have statuses
+    s1 = RTIStatus(id=uuid.uuid4(), name="PENDING")
+    s2 = RTIStatus(id=uuid.uuid4(), name="DELIVERED")
+    rti_request_db.add(s1)
+    rti_request_db.add(s2)
+    rti_request_db.commit()
+    
+    # Older history
+    h1 = RTIStatusHistory(
+        id=uuid.uuid4(),
+        rti_request_id=req_id,
+        status_id=s1.id,
+        entry_time=datetime(2023, 1, 1),
+        direction=RTIDirection.sent,
+        files=[]
+    )
+    # Newer history
+    h2 = RTIStatusHistory(
+        id=uuid.uuid4(),
+        rti_request_id=req_id,
+        status_id=s2.id,
+        entry_time=datetime(2023, 1, 2),
+        direction=RTIDirection.received,
+        files=[]
+    )
+    rti_request_db.add(h1)
+    rti_request_db.add(h2)
+    rti_request_db.commit()
+    
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+    response = service.get_rti_requests(page=1, page_size=10)
+    
+    found = next((r for r in response.data if r.id == req_id), None)
+    assert found is not None
+    assert found.current_status is not None
+    assert found.current_status.name == "DELIVERED"
+    # Note: Depending on SQLite datetime handling, we might need to compare carefully
+    assert found.current_status.updated_at.year == 2023
+    assert found.current_status.updated_at.day == 2
 
 @pytest.mark.asyncio
 async def test_get_rti_requests_empty_db(make_file_service):

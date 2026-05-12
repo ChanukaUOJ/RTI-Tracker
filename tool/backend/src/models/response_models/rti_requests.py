@@ -7,6 +7,7 @@ from src.models.common.common import PaginationModel
 from .senders import SenderShortResponse
 from .receivers import ReceiverShortResponse
 from .rti_templates import RTITemplateShortResponse
+from .rti_statuses import RTICurrentStatusResponse
 
 class RTIRequestResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -20,6 +21,12 @@ class RTIRequestResponse(BaseModel):
     created_at: datetime = Field(..., serialization_alias="createdAt", description="ISO 8601 timestamp of when the RTI Request was created")
     updated_at: datetime = Field(..., serialization_alias="updatedAt", description="ISO 8601 timestamp of when the RTI Request was last updated")
 
+class RTIRequestExpandedResponse(RTIRequestResponse):
+    model_config = ConfigDict(from_attributes=True)
+
+    current_status: Optional[RTICurrentStatusResponse] = Field(None, serialization_alias="currentStatus", description="RTI current status response object")
+
 class RTIRequestListResponse(BaseModel):
-    data: List[RTIRequestResponse] = Field([], description="List of RTI Requests")
+    data: List[RTIRequestExpandedResponse] = Field([], description="List of RTI Requests")
     pagination: PaginationModel = Field(..., description="Pagination metadata")
+
