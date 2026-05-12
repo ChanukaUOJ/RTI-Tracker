@@ -20,6 +20,7 @@ import { positionService } from '../services/positionService';
 import { Institution, Position, Receiver } from '../types/db';
 import { useEntityData } from '../hooks/useEntityData';
 import { Column } from '../types/table';
+import { useDebounce } from '../hooks/useDebounce';
 
 type TabKey = 'receivers' | 'institutions' | 'positions';
 
@@ -57,6 +58,8 @@ export function Receivers() {
     positions: { page: 1, pageSize: 10, search: '' }
   });
 
+  const debouncedReceiversSearch = useDebounce(params.receivers.search);
+
   // Entities Hook Instances
   const receiversHook = useEntityData<Receiver>(
     'receivers',
@@ -68,7 +71,7 @@ export function Receivers() {
     },
     params.receivers.page,
     params.receivers.pageSize,
-    params.receivers.search,
+    debouncedReceiversSearch,
     (p) => updateParams('receivers', { page: p })
   );
 
@@ -259,14 +262,12 @@ export function Receivers() {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="flex flex-wrap justify-between items-end gap-4">
-        <div className="min-w-[200px]">
-          <h1 className="text-2xl font-bold text-gray-900">Receivers</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage receivers, institutions, and positions.</p>
-        </div>
+      <div className="items-end mb-1">
+        <h1 className="text-xl font-bold text-gray-900">Receivers</h1>
+        <p className="text-xs text-gray-600">Manage receivers, institutions and positions.</p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1">
         {(['receivers', 'institutions', 'positions'] as TabKey[]).map(t => (
           <TabButton key={t} active={tab === t} onClick={() => setTab(t)}>
             {t.charAt(0).toUpperCase() + t.slice(1)}

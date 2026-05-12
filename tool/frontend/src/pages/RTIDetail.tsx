@@ -195,7 +195,7 @@ export function RTIDetail() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      <div className="max-w mx-auto space-y-6 pb-12">
         {/* Navigation & Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <button
@@ -215,41 +215,20 @@ export function RTIDetail() {
           </div>
         </div>
 
-        {/* Header Banner */}
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{request?.title}</h1>
-              </div>
-              <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-gray-500">
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4" />
-                  Last Updated: {new Date(request.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' })}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 gap-6">
           {/* Left Columns: Core Info */}
           <div className="space-y-6">
 
             {/* Overview */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-6">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-3">
               <div>
-                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-900" />
-                  Request Description
-                </h2>
+                <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-1">{request?.title}</h1>
                 <p className="text-gray-600 leading-relaxed text-xs">
                   {request?.description || 'No description provided.'}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-3 border-t border-gray-50">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 border-t pt-2 border-gray-50">
                 {/* Sender Info */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sender Details</h3>
@@ -293,16 +272,6 @@ export function RTIDetail() {
                     <FileText className="w-4 h-4 text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-sm font-bold text-gray-900">{request?.rtiTemplate?.title || 'Custom Request'}</p>
-                      {request?.rtiTemplate?.file && (
-                        <a
-                          href={`${FILE_VIEW_BASE_URL}${request.rtiTemplate.file}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] text-blue-600 hover:text-blue-800 font-bold mt-1 inline-block underline decoration-blue-200 underline-offset-2 transition-colors"
-                        >
-                          See Template
-                        </a>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -310,7 +279,7 @@ export function RTIDetail() {
             </div>
 
             {/* Timeline */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
               <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                   <Clock className="w-4 h-4 text-blue-900" />
@@ -375,8 +344,8 @@ export function RTIDetail() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-3 py-1">
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest border ${h.direction === 'sent' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-green-50 text-green-700 border-green-100'}`}>
+                          <div className="flex items-center">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-widest border ${h.direction === 'sent' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-green-50 text-green-700 border-green-100'}`}>
                               {h.direction}
                             </span>
                           </div>
