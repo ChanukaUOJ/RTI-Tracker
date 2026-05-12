@@ -26,16 +26,28 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
   let cursorY = 25;
 
 
+  interface RenderState {
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+  }
+
   // Helper to render text with markdown support (bold, italic, underline)
-  const renderRichText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number = 5, initialBold: boolean = false): number => {
+  const renderRichText = (
+    text: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number = 5,
+    initialState: RenderState
+  ): { endY: number; hasRenderedText: boolean; state: RenderState } => {
     const tokens: { text: string; style: string; underline: boolean }[] = [];
 
     // Split by all possible markdown markers, preserving them
     const segments = text.split(/(<u>|<\/u>|\*\*\*|___|\*\*|__|\*|_)/);
 
-    let isBold = initialBold;
-    let isItalic = false;
-    let isUnderline = false;
+    let { bold: isBold, italic: isItalic, underline: isUnderline } = initialState;
+    let hasRenderedText = false;
 
     segments.forEach(seg => {
       if (seg === '<u>') {
@@ -56,6 +68,7 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
         else if (isItalic) style = 'italic';
 
         tokens.push({ text: seg, style, underline: isUnderline });
+        if (seg.trim().length > 0) hasRenderedText = true;
       }
     });
 
@@ -82,7 +95,7 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
         }
 
         doc.text(safeWord, currentX, currentY);
-        
+
         if (token.underline) {
           doc.setLineWidth(0.2);
           doc.line(currentX, currentY + 0.5, currentX + wordWidth, currentY + 0.5);
@@ -92,10 +105,16 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
       });
     });
 
-    return currentY;
+    return {
+      endY: currentY,
+      hasRenderedText,
+      state: { bold: isBold, italic: isItalic, underline: isUnderline }
+    };
   };
 
   const lines = finalMarkdown.split('\n');
+  let currentState: RenderState = { bold: false, italic: false, underline: false };
+
   lines.forEach(line => {
     const trimmedLine = line.trim();
     if (trimmedLine === '') {
@@ -111,10 +130,11 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
     if (line.startsWith('#')) {
       const level = line.startsWith('##') ? 2 : 1;
       const title = line.replace(/^#+\s*/, '');
-      
+
       doc.setFontSize(level === 1 ? 16 : 14);
-      // Headings are bold by default (initialBold = true)
-      cursorY = renderRichText(title, margin, cursorY, contentWidth, 7, true);
+      // Headings reset state and are bold by default
+      const result = renderRichText(title, margin, cursorY, contentWidth, 7, { bold: true, italic: false, underline: false });
+      cursorY = result.endY;
       cursorY += 4; // Extra space after headings
     } else {
       // Check for numbered list items (1. item, 2. item)
@@ -126,26 +146,32 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
         doc.setFontSize(11);
         const listIndent = margin + 8;
         const listContentWidth = contentWidth - 8;
-        // Render the number
         doc.setFont('times', 'normal');
         doc.text(`${olMatch[1]}.`, margin, cursorY);
-        // Render the list item content
-        cursorY = renderRichText(olMatch[2], listIndent, cursorY, listContentWidth, 5, false);
+        const result = renderRichText(olMatch[2], listIndent, cursorY, listContentWidth, 5, currentState);
+        cursorY = result.endY;
+        currentState = result.state;
         cursorY += 4;
       } else if (ulMatch) {
         doc.setFontSize(11);
         const listIndent = margin + 8;
         const listContentWidth = contentWidth - 8;
-        // Render the bullet
         doc.setFont('times', 'normal');
         doc.text('•', margin + 2, cursorY);
-        // Render the list item content
-        cursorY = renderRichText(ulMatch[1], listIndent, cursorY, listContentWidth, 5, false);
+        const result = renderRichText(ulMatch[1], listIndent, cursorY, listContentWidth, 5, currentState);
+        cursorY = result.endY;
+        currentState = result.state;
         cursorY += 4;
       } else {
         doc.setFontSize(11);
-        cursorY = renderRichText(line.trim(), margin, cursorY, contentWidth, 5, false);
-        cursorY += 6; // Paragraph spacing
+        const result = renderRichText(line.trim(), margin, cursorY, contentWidth, 5, currentState);
+        cursorY = result.endY;
+        currentState = result.state;
+
+        // add paragraph spacing if the line actually contained visible text
+        if (result.hasRenderedText) {
+          cursorY += 6;
+        }
       }
     }
   });

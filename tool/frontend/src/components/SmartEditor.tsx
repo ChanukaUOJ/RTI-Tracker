@@ -89,8 +89,13 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
     }
 
     // Handle Bold & Italic BEFORE variables
+    html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+    html = html.replace(/<u>(.*?)<\/u>/g, '<u>$1</u>');
+
+    // Support * for bullets as well as -
+    html = html.replace(/^(\s*)\*\s+(.*)$/gm, '$1- $2');
 
     // Handle variables (pills) LAST
     html = html.replace(/{{([^}]+)}}/g, (match) => {
@@ -161,11 +166,18 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
         content += walk(child);
       });
 
-      if (tag === 'strong' || tag === 'b') return `**${content}**`;
-      if (tag === 'em' || tag === 'i') return `*${content}*`;
-      if (tag === 'u') return `<u>${content}</u>`;
-      if (tag === 'h1') return `# ${content}\n`;
-      if (tag === 'h2') return `## ${content}\n`;
+      const wrapInTags = (inner: string, start: string, end: string) => {
+        if (!inner) return '';
+        const match = inner.match(/^(\s*)([\s\S]*?)(\s*)$/);
+        if (!match) return start + inner + end;
+        return `${match[1]}${start}${match[2]}${end}${match[3]}`;
+      };
+
+      if (tag === 'strong' || tag === 'b') return wrapInTags(content, '**', '**');
+      if (tag === 'em' || tag === 'i') return wrapInTags(content, '*', '*');
+      if (tag === 'u') return wrapInTags(content, '<u>', '</u>');
+      if (tag === 'h1') return `# ${content.trim()}\n`;
+      if (tag === 'h2') return `## ${content.trim()}\n`;
       if (tag === 'p' || tag === 'div') return `${content}\n`;
       if (tag === 'br') return '\n';
 
@@ -176,11 +188,19 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
     return markdown.replace(/\n{3,}/g, '\n\n');
   };
 
-  const cleanPillInternals = (editor: HTMLElement) => {
+  const cleanEditorHtml = (editor: HTMLElement) => {
+    // Clean pills
     editor.querySelectorAll('.pill-chip').forEach(pill => {
       pill.querySelectorAll('strong, b, em, i, u').forEach(tag => {
         tag.replaceWith(...Array.from(tag.childNodes));
       });
+    });
+
+    // Remove empty formatting tags
+    editor.querySelectorAll('strong, b, em, i, u').forEach(tag => {
+      if (tag.textContent?.trim() === '' && tag.children.length === 0) {
+        tag.remove();
+      }
     });
   };
 
@@ -195,9 +215,10 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
       document.execCommand(command, false, value);
 
       pills.forEach(pill => pill.setAttribute('contenteditable', 'false'));
-      cleanPillInternals(editor);
+      cleanEditorHtml(editor);
     } else {
       document.execCommand(command, false, value);
+      cleanEditorHtml(editor);
     }
 
     editor.focus();
