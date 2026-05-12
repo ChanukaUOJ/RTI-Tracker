@@ -201,7 +201,7 @@ export function RTIRequests() {
       header: 'Last Updated',
       cell: (r: RTIRequest) => (
         <span className="text-xs text-gray-500">
-          {new Date(r.currentStatus?.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' })}
+          {r.currentStatus?.updatedAt ? new Date(r.currentStatus.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' }) : '-'}
         </span>
       )
     },
@@ -395,7 +395,7 @@ export function RTIRequests() {
 
   return (
     <div className="flex flex-col space-y-2">
-      <div className="items-end mb-1">
+      <div className="mb-1">
         <h1 className="text-xl font-bold text-gray-900">RTI Requests</h1>
         <p className="text-xs text-gray-600">Manage and track your RTI requests.</p>
       </div>

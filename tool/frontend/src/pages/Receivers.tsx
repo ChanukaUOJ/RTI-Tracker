@@ -262,7 +262,7 @@ export function Receivers() {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="items-end mb-1">
+      <div className="mb-1">
         <h1 className="text-xl font-bold text-gray-900">Receivers</h1>
         <p className="text-xs text-gray-600">Manage receivers, institutions and positions.</p>
       </div>

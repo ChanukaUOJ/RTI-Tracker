@@ -1,7 +1,7 @@
 
 export default function getStatusColor(statusName: string): string {
 
-    var statusColor = "bg-gray-50 text-gray-600"
+    let statusColor = "bg-gray-50 text-gray-600"
     switch (statusName) {
         case "CREATED":
             statusColor = "border-blue-200 bg-blue-50 text-blue-600"

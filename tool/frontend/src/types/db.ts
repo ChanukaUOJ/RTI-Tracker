@@ -67,7 +67,7 @@ export interface RTIRequest {
     title: string;
     file: string;
   } | null;
-  currentStatus: {
+  currentStatus?: {
     id: string;
     name: string;
     updatedAt: Date;

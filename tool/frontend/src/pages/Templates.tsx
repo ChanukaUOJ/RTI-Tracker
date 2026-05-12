@@ -226,7 +226,7 @@ export function Templates() {
     <div className="flex flex-col space-y-4 lg:h-[calc(100vh-4rem)]">
       <div className="flex flex-wrap justify-between items-end gap-4">
 
-        <div className="items-end mb-1">
+        <div className="mb-1">
           <h1 className="text-xl font-bold text-gray-900">RTI Template Manager</h1>
           <p className="text-xs text-gray-600">Manage RTI templates for RTI generation.</p>
         </div>

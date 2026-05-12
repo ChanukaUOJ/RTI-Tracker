@@ -195,7 +195,7 @@ export function RTIDetail() {
 
   return (
     <>
-      <div className="max-w mx-auto space-y-6 pb-12">
+      <div className="max-w-full mx-auto space-y-6 pb-12">
         {/* Navigation & Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <button
