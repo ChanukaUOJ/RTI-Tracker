@@ -148,6 +148,17 @@ class RTIRequestService:
         try:
             offset = (page - 1) * page_size
 
+            # Apply search filter if provided
+            search_filters = []
+            if search_query:
+                query = search_query.strip()
+                search_filters.append(
+                    or_(
+                        RTIRequest.title.icontains(query),
+                        RTIRequest.description.icontains(query)
+                    )
+                )
+
             # subquery to rank history records
             rank_subq = (
                 select(
@@ -155,7 +166,7 @@ class RTIRequestService:
                     RTIStatusHistory.rti_request_id,
                     func.row_number().over(
                         partition_by=RTIStatusHistory.rti_request_id,
-                        order_by=[RTIStatusHistory.entry_time.desc()]
+                        order_by=[RTIStatusHistory.entry_time.desc(), RTIStatusHistory.created_at.desc()]
                     ).label("rn")
                 )
                 .subquery()
@@ -172,21 +183,7 @@ class RTIRequestService:
                 .outerjoin(rank_subq, (RTIRequest.id == rank_subq.c.rti_request_id) & (rank_subq.c.rn == 1))
                 .outerjoin(RTIStatusHistory, RTIStatusHistory.id == rank_subq.c.history_id)
                 .outerjoin(RTIStatus, RTIStatusHistory.status_id == RTIStatus.id)
-            )
-
-            # Apply search filter if provided
-            if search_query:
-                query = search_query.strip()
-                statement_records = statement_records.where(
-                    or_(
-                        RTIRequest.title.icontains(query),
-                        RTIRequest.description.icontains(query)
-                    )
-                )
-
-            # finalize records query
-            statement_records = (
-                statement_records
+                .where(*search_filters)
                 .order_by(RTIRequest.created_at.desc())
                 .offset(offset)
                 .limit(page_size)
@@ -211,18 +208,12 @@ class RTIRequestService:
                     )
                 )
             
-            # fetch the total record count
-            statement_count = select(func.count()).select_from(RTIRequest)
-            
-            if search_query:
-                query = search_query.strip()
-                statement_count = statement_count.where(
-                    or_(
-                        RTIRequest.title.icontains(query),
-                        RTIRequest.description.icontains(query)
-                    )
-                )
-                
+            # fetch the total record count (with same filters applied)
+            statement_count = (
+                select(func.count(RTIRequest.id))
+                .select_from(RTIRequest)
+                .where(*search_filters)
+            )
             total_items = self.session.exec(statement_count).one()
 
             # pagination response
