@@ -37,7 +37,8 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
   const parseMarkdownToHtml = (markdown: string) => {
     if (!markdown || markdown.trim() === '') return '';
 
-    const lines = markdown.split('\n');
+    const normalizedMarkdown = markdown.replace(/^(\s*)\*\s+(.*)$/gm, '$1- $2');
+    const lines = normalizedMarkdown.split('\n');
     let html = '';
     let i = 0;
 
@@ -86,17 +87,11 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
       i++;
     }
 
-    // Handle alignment divs
-    html = html.replace(/<div style="text-align: (.*?)">([\s\S]*?)<\/div>/g, '<div style="text-align: $1">$2</div>');
-
     // Handle Bold & Italic BEFORE variables
     html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
     html = html.replace(/<u>(.*?)<\/u>/g, '<u>$1</u>');
-
-    // Support * for bullets as well as -
-    html = html.replace(/^(\s*)\*\s+(.*)$/gm, '$1- $2');
 
     // Handle variables (pills) LAST
     html = html.replace(/{{([^}]+)}}/g, (match) => {
