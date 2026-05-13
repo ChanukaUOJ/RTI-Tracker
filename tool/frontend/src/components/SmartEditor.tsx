@@ -73,8 +73,10 @@ export const SmartEditor = forwardRef<SmartEditorRef, SmartEditorProps>(({
         continue;
       }
 
-      // Headings
-      if (line.startsWith('# ')) {
+      // Alignment blocks and Headings
+      if (line.startsWith('<div style="text-align:') || line.trim() === '</div>') {
+        html += line;
+      } else if (line.startsWith('# ')) {
         html += `<h1>${line.slice(2)}</h1>`;
       } else if (line.startsWith('## ')) {
         html += `<h2>${line.slice(3)}</h2>`;
