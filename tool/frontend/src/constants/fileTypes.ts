@@ -52,5 +52,5 @@ export const stripPrimaryExtension = (fileName: string, policy: FileTypePolicy):
 
 export const isAcceptedFile = (file: File, policy: FileTypePolicy): boolean => {
   const rules = getFileTypeRules(policy);
-  return rules.mimeTypes.includes(file.type) || hasAllowedExtension(file.name, policy);
+  return rules.mimeTypes.includes(file.type) && hasAllowedExtension(file.name, policy);
 };
