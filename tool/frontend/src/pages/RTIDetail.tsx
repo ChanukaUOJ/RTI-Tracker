@@ -9,10 +9,12 @@ import { Button } from '../components/Button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import toast from 'react-hot-toast';
 import { config } from '../config';
+import { fileTypePolicies, getAcceptValue, getPrimaryExtension } from '../constants/fileTypes';
 
 const FILE_VIEW_BASE_URL = config.FILE_VIEW_BASE_URL;
 
 export function RTIDetail() {
+  const requestFilePolicy = fileTypePolicies.rtiRequest;
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -485,7 +487,7 @@ export function RTIDetail() {
                     id="file-upload"
                     type="file"
                     multiple
-                    accept=".pdf"
+                    accept={getAcceptValue(requestFilePolicy)}
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
                       setEventFormData({ ...eventFormData, newFiles: [...eventFormData.newFiles, ...files] });
@@ -508,7 +510,7 @@ export function RTIDetail() {
                     {eventFormData.existingFiles.map((_, i) => (
                       <div key={`exist-${i}`} className="flex items-center gap-1.5 text-[10px] bg-blue-50 border border-blue-100 px-2 py-1 rounded-lg text-blue-700 font-bold group">
                         <FileText className="w-2.5 h-2.5" />
-                        <span className="truncate max-w-[120px]">{`File ${i + 1}.pdf`}</span>
+                        <span className="truncate max-w-[120px]">{`File ${i + 1}${getPrimaryExtension(requestFilePolicy)}`}</span>
                         <button
                           type="button"
                           onClick={() => setEventFormData({

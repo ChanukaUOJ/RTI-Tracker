@@ -11,6 +11,7 @@ from fastapi import UploadFile
 from sqlalchemy import event
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 from src.utils import http_client
+from src.utils.file_validation import FILE_VALIDATION_RULES, FileValidationPolicy
 from src.models import Sender, RTIStatus
 from src.models.response_models import SenderResponse
 from src.models.request_models import SenderRequest, InstitutionRequest, RTIRequestRequest, RTIRequestUpdateRequest
@@ -98,11 +99,14 @@ def rti_template_db():
 @pytest.fixture
 def make_upload_file():
     """Returns a factory for creating mock UploadFile instances."""
+    request_file_rules = FILE_VALIDATION_RULES[FileValidationPolicy.RTI_REQUEST]
+    default_content_type = next(iter(request_file_rules.allowed_content_types))
+    default_extension = next(iter(request_file_rules.allowed_extensions))
 
     def _factory(
         content: bytes = b"# Hello",
-        content_type: str = "text/markdown",
-        filename: str = "test.md",
+        content_type: str = default_content_type,
+        filename: str = f"test{default_extension}",
     ):
         mock_file = AsyncMock(spec=UploadFile)
         mock_file.content_type = content_type
@@ -661,4 +665,3 @@ def make_rti_request_update_request():
             
         return request
     return _factory
-

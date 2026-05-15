@@ -237,7 +237,32 @@ async def test_create_rti_template_no_extension(rti_template_db, make_file_servi
     with pytest.raises(BadRequestException) as exc:
         await service.create_rti_template(template_request=request)
     
-    assert "doesn't have any file extension" in str(exc.value)
+    assert "file extension" in str(exc.value)
+
+@pytest.mark.asyncio
+async def test_create_rti_template_invalid_content_type(rti_template_db, make_file_service, make_template_request):
+    """BadRequestException is raised if the uploaded template MIME type is unsupported."""
+    service = RTITemplateService(session=rti_template_db, file_service=make_file_service())
+
+    request = make_template_request()
+    request.file.content_type = "application/pdf"
+
+    with pytest.raises(BadRequestException) as exc:
+        await service.create_rti_template(template_request=request)
+
+    assert "content type" in str(exc.value)
+
+@pytest.mark.asyncio
+async def test_create_rti_template_uppercase_extension_allowed(rti_template_db, make_file_service, make_template_request):
+    """Uppercase template file extensions are normalized before validation."""
+    service = RTITemplateService(session=rti_template_db, file_service=make_file_service())
+
+    request = make_template_request()
+    request.file.filename = "UPPER.MD"
+
+    result = await service.create_rti_template(template_request=request)
+
+    assert result.title == request.title
 
 # update_rti_template tests
 @pytest.mark.asyncio

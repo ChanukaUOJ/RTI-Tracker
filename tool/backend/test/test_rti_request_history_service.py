@@ -213,7 +213,47 @@ async def test_create_rti_request_history_invalid_file_extension(rti_request_db,
     
     with pytest.raises(BadRequestException) as exc:
         await service.create_rti_request_history(rti_request_id=rti_request.id, request_data=request)
-    assert "valid extension" in str(exc.value)
+    assert "extension" in str(exc.value)
+
+@pytest.mark.asyncio
+async def test_create_rti_request_history_invalid_content_type(rti_request_db, make_file_service, make_upload_file):
+    """BadRequestException raised for unsupported history attachment MIME types."""
+    rti_request = create_test_rti_request(rti_request_db)
+    status = rti_request_db.exec(select(RTIStatus)).first()
+    service = RTIRequestHistoryService(session=rti_request_db, file_service=make_file_service())
+
+    files = [make_upload_file(filename="valid.pdf", content_type="text/plain")]
+
+    request = RTIRequestHistoryRequest(
+        statusId=status.id,
+        direction=RTIDirection.sent,
+        entryTime=datetime.now(timezone.utc),
+        files=files
+    )
+
+    with pytest.raises(BadRequestException) as exc:
+        await service.create_rti_request_history(rti_request_id=rti_request.id, request_data=request)
+    assert "content type" in str(exc.value)
+
+@pytest.mark.asyncio
+async def test_create_rti_request_history_uppercase_extension_allowed(rti_request_db, make_file_service, make_upload_file):
+    """Uppercase history attachment extensions are normalized before validation."""
+    rti_request = create_test_rti_request(rti_request_db)
+    status = rti_request_db.exec(select(RTIStatus)).first()
+
+    fs = make_file_service(relative_path="rti-requests/hist/123.pdf")
+    service = RTIRequestHistoryService(session=rti_request_db, file_service=fs)
+
+    request = RTIRequestHistoryRequest(
+        statusId=status.id,
+        direction=RTIDirection.sent,
+        entryTime=datetime.now(timezone.utc),
+        files=[make_upload_file(filename="UPPER.PDF")]
+    )
+
+    result = await service.create_rti_request_history(rti_request_id=rti_request.id, request_data=request)
+
+    assert len(result.files) == 1
 
 @pytest.mark.asyncio
 async def test_create_rti_request_history_db_failure_rolls_back_files(rti_request_db, monkeypatch, make_file_service, make_upload_file):
@@ -632,7 +672,7 @@ async def test_update_rti_request_history_invalid_file_extension(rti_request_db,
     
     with pytest.raises(BadRequestException) as exc:
         await service.update_rti_request_history(rti_request_id=rti_request.id, request_data=request)
-    assert "valid extension" in str(exc.value)
+    assert "extension" in str(exc.value)
 
 @pytest.mark.asyncio
 async def test_update_rti_request_history_invalid_relative_path_response(rti_request_db, make_file_service, make_upload_file):
@@ -765,6 +805,4 @@ async def test_delete_rti_request_history_github_delete_failure_post_commit(rti_
     # DB record should be gone
     assert rti_request_db.get(RTIStatusHistory, history.id) is None
     fs.delete_file.assert_called_once_with(file_path=file_path)
-
-
 

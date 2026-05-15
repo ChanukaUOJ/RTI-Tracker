@@ -7,7 +7,9 @@ from sqlalchemy import text
 from sqlmodel import SQLModel, Session, create_engine, select
 from datetime import datetime, timezone
 
+import src.utils.file_validation as file_validation
 from src.services.rti_request_service import RTIRequestService
+from src.utils.file_validation import FileValidationPolicy, FileValidationRules
 from src.models.table_schemas.table_schemas import (
     RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection, 
     Sender, Receiver, RTITemplate
@@ -137,7 +139,35 @@ async def test_create_rti_request_invalid_file_extension(rti_request_db, make_fi
     
     with pytest.raises(BadRequestException) as exc:
         await service.create_rti_request(request_data=request)
-    assert "valid extension" in str(exc.value)
+    assert "extension" in str(exc.value)
+
+@pytest.mark.asyncio
+async def test_create_rti_request_invalid_content_type(rti_request_db, make_file_service, make_rti_request_request):
+    """BadRequestException raised for unsupported request MIME types."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    request = make_rti_request_request(sender_id=sender.id, receiver_id=receiver.id, content_type="text/plain")
+
+    with pytest.raises(BadRequestException) as exc:
+        await service.create_rti_request(request_data=request)
+    assert "content type" in str(exc.value)
+
+@pytest.mark.asyncio
+async def test_create_rti_request_uppercase_extension_allowed(rti_request_db, make_file_service, make_rti_request_request):
+    """Uppercase request file extensions are normalized before validation."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+
+    fs = make_file_service(relative_path="rti-requests/dir/file.pdf")
+    service = RTIRequestService(session=rti_request_db, file_service=fs)
+
+    request = make_rti_request_request(sender_id=sender.id, receiver_id=receiver.id, filename="TEST.PDF")
+
+    result = await service.create_rti_request(request_data=request)
+
+    assert result.sender.id == sender.id
 
 @pytest.mark.asyncio
 async def test_create_rti_request_missing_created_status(rti_request_db, make_file_service, make_rti_request_request):
@@ -429,7 +459,24 @@ async def test_update_rti_request_invalid_file_extension(rti_request_db, make_fi
     
     with pytest.raises(BadRequestException) as exc:
         await service.update_rti_request(request_data=update_request)
-    assert "valid extension" in str(exc.value)
+    assert "extension" in str(exc.value)
+
+@pytest.mark.asyncio
+async def test_update_rti_request_invalid_content_type(rti_request_db, make_file_service, make_rti_request_request, make_rti_request_update_request):
+    """BadRequestException raised for unsupported MIME types during update."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    fs = make_file_service(relative_path="rti-requests/update/file.pdf")
+    service = RTIRequestService(session=rti_request_db, file_service=fs)
+
+    create_request = make_rti_request_request(sender_id=sender.id, receiver_id=receiver.id)
+    created = await service.create_rti_request(request_data=create_request)
+
+    update_request = make_rti_request_update_request(id=created.id, filename="updated.pdf", content_type="text/plain")
+
+    with pytest.raises(BadRequestException) as exc:
+        await service.update_rti_request(request_data=update_request)
+    assert "content type" in str(exc.value)
 
 @pytest.mark.asyncio
 async def test_update_rti_request_not_found(rti_request_db, make_file_service, make_rti_request_update_request):
@@ -500,12 +547,14 @@ async def test_update_rti_request_post_commit_file_deletion_failure(rti_request_
     # Change the mock to return a .txt path for the next create_file call (during update)
     fs.create_file = AsyncMock(return_value={"relative_path": updated_path})
     
-    # To trigger delete_file, we'd need another allowed extension.
-    # We modify it temporarily and ENSURE it is restored to prevent isolation leaks.
-    original_types = list(service.ALLOWED_FILE_TYPES)
+    # To trigger delete_file, we temporarily widen the shared allowlist.
+    original_rules = file_validation.FILE_VALIDATION_RULES[FileValidationPolicy.RTI_REQUEST]
     try:
-        # this is a temporary list extending
-        service.ALLOWED_FILE_TYPES.append(".txt")
+        file_validation.FILE_VALIDATION_RULES[FileValidationPolicy.RTI_REQUEST] = FileValidationRules(
+            label=original_rules.label,
+            allowed_extensions=frozenset({".pdf", ".txt"}),
+            allowed_content_types=original_rules.allowed_content_types,
+        )
         update_request = make_rti_request_update_request(id=created.id, filename="new.txt")
         
         # This should succeed even if delete_file fails
@@ -521,7 +570,7 @@ async def test_update_rti_request_post_commit_file_deletion_failure(rti_request_
         ).first()
         assert status_history.files == [updated_path]
     finally:
-        service.ALLOWED_FILE_TYPES = original_types
+        file_validation.FILE_VALIDATION_RULES[FileValidationPolicy.RTI_REQUEST] = original_rules
 
 @pytest.mark.asyncio
 async def test_update_rti_request_missing_initial_history(rti_request_db, make_file_service, make_rti_request_request, make_rti_request_update_request):
