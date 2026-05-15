@@ -2,7 +2,7 @@ import { Template } from '../types/rti';
 import { AsgardeoContextProps } from '@asgardeo/react';
 import { ListResponse } from '../types/api';
 import { config } from '../config';
-import { fileTypePolicies, getPrimaryExtension, getPrimaryMimeType } from '../constants/fileTypes';
+import { fileTypePolicies, getDefaultGeneratedFileSpec } from '../constants/fileTypes';
 
 const API_BASE_URL = config.RTI_TRACKER_SERVER_URL;
 const FILE_STORAGE_BASE_URL = config.FILE_STORAGE_BASE_URL;
@@ -18,8 +18,9 @@ const toFormData = (title?: string, description?: string, content?: string): For
 
   if (content !== undefined) {
     // Convert content string to physical Markdown file for GitHub storage
-    const fileBlob = new Blob([content], { type: getPrimaryMimeType(templateFilePolicy) });
-    const fileName = `${(title || 'template').replace(/\s+/g, '_')}${getPrimaryExtension(templateFilePolicy)}`;
+    const generatedFileSpec = getDefaultGeneratedFileSpec(templateFilePolicy);
+    const fileBlob = new Blob([content], { type: generatedFileSpec.mimeType });
+    const fileName = `${(title || 'template').replace(/\s+/g, '_')}${generatedFileSpec.extension}`;
     formData.append('file', fileBlob, fileName);
   }
   return formData;

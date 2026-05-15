@@ -9,7 +9,7 @@ import { Button } from '../components/Button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import toast from 'react-hot-toast';
 import { config } from '../config';
-import { fileTypePolicies, getAcceptValue, getPrimaryExtension } from '../constants/fileTypes';
+import { fileTypePolicies, getAcceptValue, getDefaultGeneratedFileSpec } from '../constants/fileTypes';
 
 const FILE_VIEW_BASE_URL = config.FILE_VIEW_BASE_URL;
 
@@ -30,6 +30,7 @@ export function RTIDetail() {
   const deleteHistoryMutation = useDeleteRtiRequestHistory();
 
   const history = (historyResponse?.data || [])
+  const { extension: generatedFileExtension } = getDefaultGeneratedFileSpec(requestFilePolicy);
 
   // Event Modal State
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -510,7 +511,7 @@ export function RTIDetail() {
                     {eventFormData.existingFiles.map((_, i) => (
                       <div key={`exist-${i}`} className="flex items-center gap-1.5 text-[10px] bg-blue-50 border border-blue-100 px-2 py-1 rounded-lg text-blue-700 font-bold group">
                         <FileText className="w-2.5 h-2.5" />
-                        <span className="truncate max-w-[120px]">{`File ${i + 1}${getPrimaryExtension(requestFilePolicy)}`}</span>
+                        <span className="truncate max-w-[120px]">{`File ${i + 1}${generatedFileExtension}`}</span>
                         <button
                           type="button"
                           onClick={() => setEventFormData({

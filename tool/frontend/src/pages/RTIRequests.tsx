@@ -18,9 +18,9 @@ import { sendersService } from '../services/sendersService';
 import { getVariableValues } from '../utils/variableUtils';
 import getStatusColor from '../utils/styleUtils';
 import {
+  getDefaultGeneratedFileSpec,
   fileTypePolicies,
   getAcceptValue,
-  getPrimaryMimeType,
   isAcceptedFile,
   stripPrimaryExtension,
 } from '../constants/fileTypes';
@@ -152,6 +152,7 @@ export function RTIRequests() {
         pdfFile = uploadedFile;
         finalMarkdown = 'File uploaded manually';
       } else {
+        const { mimeType } = getDefaultGeneratedFileSpec(requestFilePolicy);
         const { blob, fileName, finalMarkdown: generatedMarkdown } = await generateRTIPDF({
           title: formData.title,
           requestDate: formData.requestDate,
@@ -159,7 +160,7 @@ export function RTIRequests() {
           receiver,
           content: rawContent
         });
-        pdfFile = new File([blob], fileName, { type: getPrimaryMimeType(requestFilePolicy) });
+        pdfFile = new File([blob], fileName, { type: mimeType });
         finalMarkdown = generatedMarkdown;
         downloadBlob(blob, fileName);
       }
