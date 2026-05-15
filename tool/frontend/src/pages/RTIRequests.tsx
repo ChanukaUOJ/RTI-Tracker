@@ -16,10 +16,12 @@ import { RTIRequest, Sender, Receiver } from '../types/db';
 import { Column } from '../types/table';
 import { sendersService } from '../services/sendersService';
 import { getVariableValues } from '../utils/variableUtils';
+import getStatusColor from '../utils/styleUtils';
 
 import { useRTIRequest } from '../hooks/useRTIRequest';
 import { useEntityData } from '../hooks/useEntityData';
 import { useTemplates } from '../hooks/useTemplates';
+import { useDebounce } from '../hooks/useDebounce';
 
 type View = 'list' | 'create';
 
@@ -31,6 +33,9 @@ export function RTIRequests() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [receiverSearch, setReceiverSearch] = useState('');
 
+  const debouncedSearch = useDebounce(search);
+  const debouncedReceiverSearch = useDebounce(receiverSearch);
+
   const {
     data: rows,
     pagination,
@@ -40,10 +45,10 @@ export function RTIRequests() {
     isDeleting,
     isLoading: isLoadingRequests,
     isFetching: isFetchingRequests
-  } = useRTIRequest(pageParams.page, pageParams.pageSize, search);
+  } = useRTIRequest(pageParams.page, pageParams.pageSize, debouncedSearch);
 
   const { data: senders = [] } = useEntityData<Sender>('senders', { list: sendersService.listSenders }, 1, 100);
-  const { data: receivers = [] } = useEntityData<Receiver>('receivers', { list: receiversService.listReceivers }, 1, 6, receiverSearch);
+  const { data: receivers = [] } = useEntityData<Receiver>('receivers', { list: receiversService.listReceivers }, 1, 6, debouncedReceiverSearch);
   const { data: templatesData } = useTemplates(1, 100);
   const templates = templatesData?.data || [];
 
@@ -183,10 +188,20 @@ export function RTIRequests() {
       )
     },
     {
+      header: 'Current Status',
+      cell: (r: RTIRequest) => (
+        <div className="flex flex-col">
+          <span className={`text-[10px] font-bold px-1 py-0.5 uppercase tracking-wider rounded-md border w-fit ${getStatusColor(r.currentStatus?.name || '')}`}>
+            {r.currentStatus?.name}
+          </span>
+        </div>
+      )
+    },
+    {
       header: 'Last Updated',
       cell: (r: RTIRequest) => (
         <span className="text-xs text-gray-500">
-          {new Date(r.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' })}
+          {r.currentStatus?.updatedAt ? new Date(r.currentStatus.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' }) : '-'}
         </span>
       )
     },
@@ -379,12 +394,10 @@ export function RTIRequests() {
   }
 
   return (
-    <div className="flex flex-col space-y-4">
-      <div className="flex flex-wrap justify-between items-end gap-4">
-        <div className="min-w-[200px]">
-          <h1 className="text-2xl font-bold text-gray-900">RTI Requests</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage and track your RTI requests.</p>
-        </div>
+    <div className="flex flex-col space-y-2">
+      <div className="mb-1">
+        <h1 className="text-xl font-bold text-gray-900">RTI Requests</h1>
+        <p className="text-xs text-gray-600">Manage and track your RTI requests.</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

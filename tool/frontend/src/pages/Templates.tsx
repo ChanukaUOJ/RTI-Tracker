@@ -225,12 +225,12 @@ export function Templates() {
   return (
     <div className="flex flex-col space-y-4 lg:h-[calc(100vh-4rem)]">
       <div className="flex flex-wrap justify-between items-end gap-4">
-        <div className="min-w-[200px]">
-          <h1 className="text-2xl font-bold text-gray-900">RTI Template Manager</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage RTI templates for RTI generation.
-          </p>
+
+        <div className="mb-1">
+          <h1 className="text-xl font-bold text-gray-900">RTI Template Manager</h1>
+          <p className="text-xs text-gray-600">Manage RTI templates for RTI generation.</p>
         </div>
+
         {(pagination.totalItems > 0 || newTemplates.length > 0) && (
           <Button onClick={addNewTemplate} className="flex items-center gap-2 whitespace-nowrap flex-shrink-0">
             <Plus className="w-4 h-4" /> New Template

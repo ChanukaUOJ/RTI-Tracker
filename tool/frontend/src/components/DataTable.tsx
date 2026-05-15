@@ -85,13 +85,13 @@ export function DataTable<T>({
             {data.map((item, rowIndex) => (
               <tr key={(item as any).id} className="hover:bg-gray-50/50">
                 {columns.map((col, i) => (
-                  <td key={i} className={`px-4 py-3 ${col.className || ''}`}>
+                  <td key={i} className={`px-4 border-b border-gray-300/50 ${col.className || ''}`}>
                     {col.cell ? col.cell(item) : (col.accessor ? String((item as any)[col.accessor] ?? '-') : '-')}
                   </td>
                 ))}
 
                 {(onView || onEdit || onDelete) && (
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-b border-gray-300/50">
                     <div className="flex items-center gap-2">
                       {onView && (
                         <Button variant="outline" size="sm" className="px-2" onClick={() => onView(item)} title="View">

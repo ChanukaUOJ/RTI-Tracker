@@ -95,11 +95,9 @@ export function Statuses() {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Statuses</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage RTI request lifecycle statuses.</p>
-        </div>
+      <div className="mb-1">
+        <h1 className="text-xl font-bold text-gray-900">Statuses</h1>
+        <p className="text-xs text-gray-600">Manage RTI request lifecycle statuses.</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

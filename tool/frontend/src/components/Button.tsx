@@ -3,7 +3,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode;
   className?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'ghost-danger';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   loading?: boolean;
@@ -19,13 +19,14 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-  'inline-flex items-center justify-center font-medium rounded border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-900';
+    'inline-flex items-center justify-center font-medium rounded border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-900';
   const variants = {
     primary: 'bg-blue-900 text-white border-blue-900 hover:bg-blue-800',
     secondary: 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100',
     outline: 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50',
-    danger:
-    'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
+    danger: 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300',
+    ghost: 'bg-transparent border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-700',
+    'ghost-danger': 'bg-transparent border-transparent text-red-500 hover:bg-red-50 hover:text-red-700'
   };
   const sizes = {
     sm: 'px-3 py-1.5 text-sm',
