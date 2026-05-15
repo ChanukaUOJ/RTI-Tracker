@@ -262,7 +262,7 @@ export const generateRTIPDF = async (data: PDFData): Promise<{ blob: Blob; fileN
       doc.setFontSize(8);
       doc.setTextColor(90, 90, 90);
       doc.setFont('helvetica', 'normal');
-      const footerText = 'GA 00231106  |  248/201 Hill Street, Dehiwela, Sri Lanka  |  +94 70 3729895  |  contact@datafoundation.lk';
+      const footerText = '';
       doc.text(footerText, pageWidth - margin, pageHeight - 10, { align: 'right' });
     }
   };
