@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from src.services.rti_request_service import RTIRequestService
 from src.models.table_schemas.table_schemas import (
     RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection, 
-    Sender, Receiver, RTITemplate
+    Sender, Receiver
 )
 from src.models.response_models.rti_requests import RTIRequestResponse, RTIRequestListResponse, RTIRequestExpandedResponse
 from src.core.exceptions import (
@@ -467,6 +467,27 @@ async def test_get_rti_requests_search_by_title(rti_request_db, make_file_servic
     assert response.pagination.total_items == 1
 
 @pytest.mark.asyncio
+async def test_get_rti_requests_search_by_partial_title(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title(partial)."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific titles
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample1 Request title meeting minutes"
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="General template 2026"
+    ))
+
+    # Search for "Gen"
+    response = service.get_rti_requests(search_query="gen")
+    assert len(response.data) == 1
+    assert response.data[0].title == "General template 2026"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
 async def test_get_rti_requests_search_by_description(rti_request_db, make_file_service, make_rti_request_request):
     """Verifies that RTI Requests can be filtered by description."""
     sender = rti_request_db.exec(select(Sender)).first()
@@ -483,6 +504,27 @@ async def test_get_rti_requests_search_by_description(rti_request_db, make_file_
 
     # Search for "secret"
     response = service.get_rti_requests(search_query="secret")
+    assert len(response.data) == 1
+    assert response.data[0].title == "R1"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_partial_description(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by description."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific descriptions
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R1", description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s."
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R2", description="There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable."
+    ))
+
+    # Search for "dummy"
+    response = service.get_rti_requests(search_query="dummy")
     assert len(response.data) == 1
     assert response.data[0].title == "R1"
     assert response.pagination.total_items == 1

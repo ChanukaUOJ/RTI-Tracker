@@ -78,7 +78,6 @@ INSERT INTO rti_statuses (name) VALUES
 ('APPEAL');
 
 -- 7. RTI REQUESTS
--- 7. RTI REQUESTS
 INSERT INTO rti_requests (title, description, sender_id, receiver_id, rti_template_id, created_at) VALUES 
 ('Inquiry on Hospital Supplies', 'Requesting details of medicine availability for Colombo South Hospital.', (SELECT id FROM senders WHERE name = 'Amal Perera' LIMIT 1), (SELECT id FROM receivers WHERE email = 'io.health@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Health Statistics Request' LIMIT 1), NOW() - INTERVAL '30 days'),
 ('School Expenditure 2024', 'Requesting budget allocation for primary schools in Jaffna.', (SELECT id FROM senders WHERE name = 'Bimali Silva' LIMIT 1), (SELECT id FROM receivers WHERE email = 'do.edu@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Education Data Request' LIMIT 1), NOW() - INTERVAL '29 days'),
