@@ -29,11 +29,13 @@ export const fileTypeRules: Record<FileTypePolicy, FileTypeRules> = rulesByPolic
 export const getFileTypeRules = (policy: FileTypePolicy): FileTypeRules =>
   rulesByPolicy[policy];
 
-export const getPrimaryExtension = (policy: FileTypePolicy): string =>
-  rulesByPolicy[policy].extensions[0];
-
-export const getPrimaryMimeType = (policy: FileTypePolicy): string =>
-  rulesByPolicy[policy].mimeTypes[0];
+export const getDefaultGeneratedFileSpec = (policy: FileTypePolicy) => {
+  const rules = rulesByPolicy[policy];
+  return {
+    extension: rules.extensions[0],
+    mimeType: rules.mimeTypes[0],
+  };
+};
 
 export const getAcceptValue = (policy: FileTypePolicy): string => {
   const rules = rulesByPolicy[policy];
@@ -48,7 +50,7 @@ export const hasAllowedExtension = (fileName: string, policy: FileTypePolicy): b
 };
 
 export const stripPrimaryExtension = (fileName: string, policy: FileTypePolicy): string => {
-  const extension = getPrimaryExtension(policy);
+  const { extension } = getDefaultGeneratedFileSpec(policy);
   return fileName.replace(new RegExp(`${extension.replace('.', '\\.')}$`, 'i'), '');
 };
 
