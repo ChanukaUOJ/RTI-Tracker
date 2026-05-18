@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FileCode, Users, FileText, Activity, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { FileCode, Users, FileText, Activity, ChevronLeft, ChevronRight, LogOut, UserRoundPen } from 'lucide-react';
 import { useAsgardeo } from "@asgardeo/react";
 
 export function Sidebar() {
@@ -11,7 +11,8 @@ export function Sidebar() {
     { name: 'RTI Requests', path: '/rti-requests', icon: FileText },
     { name: 'Receivers', path: '/receivers', icon: Users },
     { name: 'Template Manager', path: '/templates', icon: FileCode },
-    { name: 'Statuses', path: '/statuses', icon: Activity }
+    { name: 'Senders', path: '/senders', icon: UserRoundPen },
+    { name: 'Statuses', path: '/statuses', icon: Activity },
   ];
 
   return (
