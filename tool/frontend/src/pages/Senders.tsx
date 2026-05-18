@@ -45,7 +45,6 @@ export function Senders() {
     } = useSenders(
         pageParams.page,
         pageParams.pageSize,
-        undefined,
         (newPage) => setPageParams(prev => ({ ...prev, page: newPage }))
     )
 
@@ -170,7 +169,7 @@ export function Senders() {
                                 className={`px-3 py-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-900 ${senderErrors.name ? 'border-red-500' : ''}`}
                                 {...field}
                                 value={field.value || ''}
-                                placeholder="sender x"
+                                placeholder="Sender name example"
                             />
                         )}
                     />
@@ -188,7 +187,7 @@ export function Senders() {
                                 className={`px-3 py-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-900 ${senderErrors.email ? 'border-red-500' : ''}`}
                                 {...field}
                                 value={field.value || ''}
-                                placeholder="receiver@example.com"
+                                placeholder="sender@example.com"
                             />
                         )}
                     />

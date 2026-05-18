@@ -8,15 +8,14 @@ import { Sender } from "../types/db";
 export const useSenders = (
     page: number = 1,
     pageSize: number = 10,
-    search?: string,
     onPageChange?: (page: number) => void
 ) => {
     const { http, isSignedIn } = useAsgardeo();
     const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey: ['senders', page, pageSize, search],
-        queryFn: () => sendersService.listSenders(page, pageSize, search, http),
+        queryKey: ['senders', page, pageSize],
+        queryFn: () => sendersService.listSenders(page, pageSize, http),
         enabled: !!isSignedIn,
         placeholderData: keepPreviousData,
         staleTime: QUERY_STALE_TIME
