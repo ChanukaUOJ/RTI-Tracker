@@ -4,8 +4,8 @@ from .institutions import InstitutionListResponse, InstitutionResponse, Institut
 from .positions import PositionListResponse, PositionResponse, PositionShortResponse
 from .senders import SenderResponse, SenderListResponse, SenderShortResponse
 from .receivers import ReceiverListResponse, ReceiverResponse, ReceiverShortResponse
-from .rti_requests import RTIRequestResponse, RTIRequestListResponse
-from .rti_statuses import RTIStatusListResponse, RTIStatusResponse
+from .rti_requests import RTIRequestResponse, RTIRequestListResponse, RTIRequestExpandedResponse
+from .rti_statuses import RTIStatusListResponse, RTIStatusResponse, RTICurrentStatusResponse
 from .rti_request_histories import RTIRequestHistoryResponse, RTIRequestHistoryListResponse
 
 __all__ = [
@@ -30,6 +30,8 @@ __all__ = [
     "RTIStatusListResponse",
     "RTIStatusResponse",
     "RTIRequestHistoryResponse",
-    "RTIRequestHistoryListResponse"
+    "RTIRequestHistoryListResponse",
+    "RTIRequestExpandedResponse",
+    "RTICurrentStatusResponse"
 ]
 

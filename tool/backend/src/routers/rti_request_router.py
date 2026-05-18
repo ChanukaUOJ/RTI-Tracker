@@ -21,10 +21,11 @@ def get_rti_request_service(session: SessionDep, file_service: GithubFileService
 async def get_rti_requests_endpoint(
     page: int = Query(1, ge=1, description="page number"),
     page_size: int = Query(10, ge=1, le=100, alias="pageSize", description="page size"),
+    query: Optional[str] = Query("", description="search query"),
     service: RTIRequestService = Depends(get_rti_request_service),
     user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER]))
 ):
-    response = service.get_rti_requests(page=page, page_size=page_size)
+    response = service.get_rti_requests(page=page, page_size=page_size, search_query=query)
     return response
 
 @router.get("/rti_requests/{id}", response_model=RTIRequestResponse)

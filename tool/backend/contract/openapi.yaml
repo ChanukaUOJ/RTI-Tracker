@@ -41,11 +41,18 @@ paths:
     $ref: "./paths/positions.yaml#/~1positions~1{id}"
 
   # rti request paths
-  /rti-requests:
-    $ref: "./paths/rti-requests.yaml#/~1rti-requests"
-  /rti-requests/{id}:
-    $ref: "./paths/rti-requests.yaml#/~1rti-requests~1{id}"
-    
+  /rti_requests:
+    $ref: "./paths/rti-requests.yaml#/~1rti_requests"
+  /rti_requests/{id}:
+    $ref: "./paths/rti-requests.yaml#/~1rti_requests~1{id}"
+
+  # rti request history paths
+  /rti_requests/{rti_id}/histories:
+    $ref: "./paths/rti-request-histories.yaml#/~1rti_requests~1{rti_id}~1histories"
+  /rti_requests/{rti_id}/histories/{history_id}:
+    $ref: "./paths/rti-request-histories.yaml#/~1rti_requests~1{rti_id}~1histories~\
+      1{history_id}"
+
   # receivers paths
   /receivers:
     $ref: "./paths/receivers.yaml#/~1receivers"
@@ -79,8 +86,22 @@ components:
       $ref: "./components/schemas/RTIRequests.yaml#/RTIRequestRequest"
     RTIRequestResponse:
       $ref: "./components/schemas/RTIRequests.yaml#/RTIRequestResponse"
+    RTIRequestExpandedResponse:
+      $ref: "./components/schemas/RTIRequests.yaml#/RTIRequestExpandedResponse"
     RTIRequestListResponse:
       $ref: "./components/schemas/RTIRequests.yaml#/RTIRequestListResponse"
+    RTIRequestHistoryRequest:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryReques\
+        t"
+    RTIRequestHistoryUpdateRequest:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryUpdate\
+        Request"
+    RTIRequestHistoryResponse:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryRespon\
+        se"
+    RTIRequestHistoryListResponse:
+      $ref: "./components/schemas/rti-request-histories.yaml#/RTIRequestHistoryListRe\
+        sponse"
     Pagination:
       $ref: "./components/schemas/common.yaml#/Pagination"
     ErrorResponse:
@@ -103,3 +124,5 @@ components:
       $ref: "./components/parameters/Pagination.yaml#/PageParam"
     PageSizeParam:
       $ref: "./components/parameters/Pagination.yaml#/PageSizeParam"
+    SearchQueryParam:
+      $ref: "./components/parameters/Pagination.yaml#/SearchQueryParam"

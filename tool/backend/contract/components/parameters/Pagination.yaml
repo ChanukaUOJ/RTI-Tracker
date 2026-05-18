@@ -20,3 +20,13 @@ PageSizeParam:
     maximum: 100
     default: 20
   example: 20
+
+SearchQueryParam:
+  name: query
+  in: query
+  required: false
+  description: Search query to filter results by the given search criteria defined.
+  schema:
+    type: string
+    default: ""
+  example: "search query"

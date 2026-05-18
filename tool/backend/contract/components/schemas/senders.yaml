@@ -71,6 +71,36 @@ SenderRequest:
     - required: [email]
     - required: [contactNo]
 
+SenderShortResponse:
+  type: object
+  required:
+    - id
+    - name
+  properties:
+    id:
+      type: string
+      format: uuid
+      readOnly: true
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      description: Unique identifier of the sender.
+    name:
+      type: string
+      example: John Doe
+      description: name of the sender.
+    email:
+      type: string
+      format: email
+      example: example@gmail.com
+      description: Email of the sender.
+    address:
+      type: string
+      example: 123 Main St, Colombo 01
+      description: Address of the sender.
+    contactNo:
+      type: string
+      example: "0771234567"
+      description: Contact number of the sender.
+
 SenderListResponse:
   type: object
   properties:

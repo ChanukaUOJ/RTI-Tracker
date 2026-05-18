@@ -1,0 +1,155 @@
+RTIRequestHistoryResponse:
+  type: object
+  required:
+    - id
+    - rtiRequestId
+    - rtiStatus
+    - direction
+    - entryTime
+    - files
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      format: uuid
+      readOnly: true
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      description: Unique identifier for the RTI Status History.
+    rtiRequestId:
+      type: string
+      format: uuid
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      description: Unique identifier for the associated RTI Request.
+    rtiStatus:
+      $ref: "rti-statuses.yaml#/RTIStatusShortResponse"
+    direction:
+      type: string
+      enum: [ sent, received ]
+      example: sent
+      description: Direction of the RTI Status History (sent / received).
+    description:
+      type: string
+      example: Initial request sent to the department.
+      description: Description for this history entry.
+    entryTime:
+      type: string
+      format: date-time
+      example: "2026-03-31T09:00:00Z"
+      description: ISO 8601 timestamp when this status was entered.
+    exitTime:
+      type: string
+      format: date-time
+      example: "2026-04-05T10:00:00Z"
+      description: ISO 8601 timestamp when this status was exited.
+    files:
+      type: array
+      items:
+        type: string
+      example: [ "uploads/doc1.pdf", "uploads/doc2.pdf" ]
+      description: List of file URLs attached to this history entry.
+    createdAt:
+      type: string
+      format: date-time
+      readOnly: true
+      example: "2026-03-31T09:00:00Z"
+      description: ISO 8601 timestamp of when the history record was created.
+    updatedAt:
+      type: string
+      format: date-time
+      readOnly: true
+      example: "2026-03-31T09:00:00Z"
+      description: ISO 8601 timestamp of when the history record was last updated.
+
+RTIRequestHistoryListResponse:
+  type: object
+  required:
+    - data
+    - pagination
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/RTIRequestHistoryResponse"
+      description: List of RTI Request History records.
+    pagination:
+      $ref: "common.yaml#/Pagination"
+
+RTIRequestHistoryRequest:
+  type: object
+  required:
+    - statusId
+    - direction
+    - files
+  properties:
+    statusId:
+      type: string
+      format: uuid
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      description: ID of the RTI Status.
+    direction:
+      type: string
+      enum: [ sent, received ]
+      example: sent
+      description: Direction of the RTI Status History (sent / received).
+    description:
+      type: string
+      example: Initial request sent to the department.
+      description: Detailed description of the RTI Status History.
+    entryTime:
+      type: string
+      format: date-time
+      example: "2026-03-31T09:00:00Z"
+      description: Entry time for the RTI Status History. Defaults to current time if
+        not provided.
+    exitTime:
+      type: string
+      format: date-time
+      example: "2026-04-05T10:00:00Z"
+      description: Exit time for the RTI Status History.
+    files:
+      type: array
+      items:
+        type: string
+        format: binary
+      description: List of files for the RTI Status History (pdf only).
+
+RTIRequestHistoryUpdateRequest:
+  type: object
+  properties:
+    statusId:
+      type: string
+      format: uuid
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      description: ID of the RTI Status.
+    direction:
+      type: string
+      enum: [ sent, received ]
+      example: sent
+      description: Direction of the RTI Status History (sent / received).
+    description:
+      type: string
+      example: Updated description for the history entry.
+      description: Detailed description of the RTI Status History.
+    entryTime:
+      type: string
+      format: date-time
+      example: "2026-03-31T09:00:00Z"
+      description: Entry time for the RTI Status History.
+    exitTime:
+      type: string
+      format: date-time
+      example: "2026-04-05T10:00:00Z"
+      description: Exit time for the RTI Status History.
+    filesToAdd:
+      type: array
+      items:
+        type: string
+        format: binary
+      description: New files to add (pdf only).
+    filesToDelete:
+      type: array
+      items:
+        type: string
+      example: [ "uploads/old_doc.pdf" ]
+      description: Relative paths of files to delete.

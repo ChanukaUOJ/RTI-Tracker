@@ -48,6 +48,27 @@ RTITemplateResponse:
       example: "2026-03-31T09:00:00Z"
       description: ISO 8601 timestamp of when the template was last updated (UTC).
 
+RTITemplateShortResponse:
+  type: object
+  required:
+    - id
+    - title
+    - file
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      description: Unique identifier of the RTI template.
+    title:
+      type: string
+      example: Freedom of Information Request Template
+      description: Title of the RTI template.
+    file:
+      type: string
+      example: templates/3fa85f64.md
+      description: Relative path to the uploaded file.
+
 RTITemplateListResponse:
   type: object
   properties:

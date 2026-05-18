@@ -10,9 +10,9 @@ from datetime import datetime, timezone
 from src.services.rti_request_service import RTIRequestService
 from src.models.table_schemas.table_schemas import (
     RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection, 
-    Sender, Receiver, RTITemplate
+    Sender, Receiver
 )
-from src.models.response_models.rti_requests import RTIRequestResponse
+from src.models.response_models.rti_requests import RTIRequestResponse, RTIRequestListResponse, RTIRequestExpandedResponse
 from src.core.exceptions import (
     InternalServerException, BadRequestException, 
     NotFoundException, ConflictException
@@ -327,12 +327,100 @@ async def test_get_rti_requests_success(rti_request_db, make_file_service, make_
     
     # Test fetching with page_size=2
     response = service.get_rti_requests(page=1, page_size=2)
+
+    assert isinstance(response, RTIRequestListResponse)
     
     assert len(response.data) == 2
     assert response.pagination.total_items == 3
     assert response.pagination.total_pages == 2
     assert response.pagination.page == 1
     assert response.pagination.page_size == 2
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_with_no_history(rti_request_db, make_file_service):
+    """Verifies that requests with no history records have null current_status."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    
+    # Manually create a request without using the service (to bypass history creation)
+    req_id = uuid.uuid4()
+    req = RTIRequest(
+        id=req_id,
+        title="No History Request",
+        sender_id=sender.id,
+        receiver_id=receiver.id,
+        file="some/file.pdf"
+    )
+    rti_request_db.add(req)
+    rti_request_db.commit()
+    
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+    response = service.get_rti_requests(page=1, page_size=10)
+    
+    # Find our request in the list
+    found = next((r for r in response.data if r.id == req_id), None)
+    assert found is not None
+    assert isinstance(found, RTIRequestExpandedResponse)
+    assert found.current_status is None
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_latest_status_only(rti_request_db, make_file_service):
+    """Verifies that only the latest status is returned for a request with multiple history records."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    
+    # 1. Create a request
+    req_id = uuid.uuid4()
+    req = RTIRequest(
+        id=req_id,
+        title="Multiple History Request",
+        sender_id=sender.id,
+        receiver_id=receiver.id,
+        file="some/file.pdf"
+    )
+    rti_request_db.add(req)
+    rti_request_db.commit()
+    
+    # 2. Add multiple status records
+    # First, ensure we have statuses
+    s1 = RTIStatus(id=uuid.uuid4(), name="PENDING")
+    s2 = RTIStatus(id=uuid.uuid4(), name="DELIVERED")
+    rti_request_db.add(s1)
+    rti_request_db.add(s2)
+    rti_request_db.commit()
+    
+    # Older history
+    h1 = RTIStatusHistory(
+        id=uuid.uuid4(),
+        rti_request_id=req_id,
+        status_id=s1.id,
+        entry_time=datetime(2023, 1, 1),
+        direction=RTIDirection.sent,
+        files=[]
+    )
+    # Newer history
+    h2 = RTIStatusHistory(
+        id=uuid.uuid4(),
+        rti_request_id=req_id,
+        status_id=s2.id,
+        entry_time=datetime(2023, 1, 2),
+        direction=RTIDirection.received,
+        files=[]
+    )
+    rti_request_db.add(h1)
+    rti_request_db.add(h2)
+    rti_request_db.commit()
+    
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+    response = service.get_rti_requests(page=1, page_size=10)
+    
+    found = next((r for r in response.data if r.id == req_id), None)
+    assert found is not None
+    assert found.current_status is not None
+    assert found.current_status.name == "DELIVERED"
+    # Note: Depending on SQLite datetime handling, we might need to compare carefully
+    assert found.current_status.updated_at.year == 2023
+    assert found.current_status.updated_at.day == 2
 
 @pytest.mark.asyncio
 async def test_get_rti_requests_empty_db(make_file_service):
@@ -356,6 +444,106 @@ async def test_get_rti_requests_page_out_of_bounds(rti_request_db, make_file_ser
     
     assert response.pagination.page == 10
     assert response.data == []
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_title(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific titles
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample1 Report"
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample2 Report"
+    ))
+
+    # Search for "Sample1"
+    response = service.get_rti_requests(search_query="Sample1")
+    assert len(response.data) == 1
+    assert response.data[0].title == "Sample1 Report"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_partial_title(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title(partial)."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific titles
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample1 Request title meeting minutes"
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="General template 2026"
+    ))
+
+    # Search for "Gen"
+    response = service.get_rti_requests(search_query="gen")
+    assert len(response.data) == 1
+    assert response.data[0].title == "General template 2026"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_description(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by description."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific descriptions
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R1", description="Contains secret data"
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R2", description="Public info"
+    ))
+
+    # Search for "secret"
+    response = service.get_rti_requests(search_query="secret")
+    assert len(response.data) == 1
+    assert response.data[0].title == "R1"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_partial_description(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by description."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific descriptions
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R1", description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s."
+    ))
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="R2", description="There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable."
+    ))
+
+    # Search for "dummy"
+    response = service.get_rti_requests(search_query="dummy")
+    assert len(response.data) == 1
+    assert response.data[0].title == "R1"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_no_results(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that searching for a non-existent term returns empty data."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Something"
+    ))
+
+    # Search for "missing"
+    response = service.get_rti_requests(search_query="missing")
+    assert len(response.data) == 0
+    assert response.pagination.total_items == 0
 
 @pytest.mark.asyncio
 async def test_get_rti_requests_internal_error(rti_request_db, monkeypatch, make_file_service):
