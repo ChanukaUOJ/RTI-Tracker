@@ -1,4 +1,3 @@
-import os
 import logging
 from uuid import UUID, uuid4
 from sqlmodel import Session, select, func

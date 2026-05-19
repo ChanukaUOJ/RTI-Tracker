@@ -4,6 +4,11 @@ const rulesByPolicy = {
     extensions: ['.pdf'],
     mimeTypes: ['application/pdf'],
   },
+  rtiHistory: {
+    label: 'RTI history attachment',
+    extensions: ['.pdf'],
+    mimeTypes: ['application/pdf'],
+  },
   rtiTemplate: {
     label: 'RTI template file',
     extensions: ['.md'],
@@ -13,6 +18,7 @@ const rulesByPolicy = {
 
 export const fileTypePolicies = {
   rtiRequest: 'rtiRequest',
+  rtiHistory: 'rtiHistory',
   rtiTemplate: 'rtiTemplate',
 } as const;
 
