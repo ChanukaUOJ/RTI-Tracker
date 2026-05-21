@@ -84,8 +84,8 @@ def test_create_receiver_success(receiver_db, make_receiver_request):
     assert response.address == request.address
     assert response.contact_nos == request.contact_nos
 
-def test_create_receiver_conflict(receiver_db, make_receiver_request):
-    """Test receiver creation with duplicate emails list."""
+def test_create_receiver_accept_same_email_list_for_two_different_receivers(receiver_db, make_receiver_request):
+    """Test receiver creation with same email list for two different receivers."""
     pos = receiver_db.exec(select(Position)).first()
     inst = receiver_db.exec(select(Institution)).first()
 
@@ -97,11 +97,29 @@ def test_create_receiver_conflict(receiver_db, make_receiver_request):
     request2 = make_receiver_request(
         position_id=pos.id,
         institution_id=inst.id,
-        emails=["dup2@example.com"],
+        emails=["dup@example.com"],
         contact_nos=["0779999999"]
     )
     response2 = service.create_receiver(receiver_request=request2)
-    assert response2.emails == ["dup2@example.com"]
+    assert response2.emails == ["dup@example.com"]
+
+def test_create_receiver_accept_same_contact_nos_for_two_different_receivers(receiver_db, make_receiver_request):
+    """Test receiver creation with same contact_nos for two different receivers."""
+    pos = receiver_db.exec(select(Position)).first()
+    inst = receiver_db.exec(select(Institution)).first()
+
+    request1 = make_receiver_request(position_id=pos.id, institution_id=inst.id, contact_nos=["0779999999"])
+    service = ReceiverService(session=receiver_db)
+    response1 = service.create_receiver(receiver_request=request1)
+    assert response1.contact_nos == ["0779999999"]
+
+    request2 = make_receiver_request(
+        position_id=pos.id,
+        institution_id=inst.id,
+        contact_nos=["0779999999"]
+    )
+    response2 = service.create_receiver(receiver_request=request2)
+    assert response2.contact_nos == ["0779999999"]
 
 def test_get_receiver_by_id_success(receiver_db):
     """Test fetching a receiver by ID."""
