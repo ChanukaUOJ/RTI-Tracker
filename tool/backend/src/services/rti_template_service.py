@@ -7,8 +7,11 @@ from src.models.request_models import RTITemplateRequest
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select, func, Session
 from src.core.exceptions import InternalServerException, BadRequestException, NotFoundException, ConflictException
+from src.utils.file_validation import (
+    FileValidationPolicy,
+    validate_upload_file,
+)
 import logging
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -94,14 +97,11 @@ class RTITemplateService:
             uploaded_file_path: str | None = None  # tracks successful upload for compensating transaction
 
             # 1. upload the file
-            if template_request.file.content_type != "text/markdown":
-                raise BadRequestException(f'{template_request.file.content_type} is not allowed')
-            
+            ext = validate_upload_file(
+                template_request.file,
+                policy=FileValidationPolicy.RTI_TEMPLATE,
+            )
             content = await template_request.file.read()
-            _, ext = os.path.splitext(template_request.file.filename)
-
-            if not ext:
-                raise BadRequestException(f"{template_request.file.filename} doesn't have any file extension")
                 
             file_path = f"rti-templates/{unique_id}{ext}"
 
@@ -169,9 +169,10 @@ class RTITemplateService:
         try:
             # update the file if provided
             if template_request.file:
-                if template_request.file.content_type != "text/markdown":
-                    raise BadRequestException(f'{template_request.file.content_type} is not allowed')
-                
+                validate_upload_file(
+                    template_request.file,
+                    policy=FileValidationPolicy.RTI_TEMPLATE,
+                )
                 content = await template_request.file.read()
                 
                 # Use the existing path from the DB to ensure we update the correct file
@@ -295,5 +296,3 @@ class RTITemplateService:
                     logger.error(f"[RTI SERVICE] Compensating transaction failed — could not recreate {file_path}: {ex}")
             logger.error(f"[RTI SERVICE] Error deleting RTI template: {e}")
             raise InternalServerException(f"Failed to delete RTI template: {e}") from e
-
-

@@ -14,6 +14,10 @@ from src.models.response_models import RTICurrentStatusResponse
 from src.models.request_models.rti_requests import RTIRequestRequest, RTIRequestUpdateRequest
 from src.core.exceptions import InternalServerException, BadRequestException, NotFoundException, ConflictException
 from datetime import datetime, timezone
+from src.utils.file_validation import (
+    FileValidationPolicy,
+    validate_upload_file,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +25,6 @@ class RTIRequestService:
     """
     This service is responsible for executing all RTI request operations.
     """
-    ALLOWED_FILE_TYPES = [".pdf"]
 
     def __init__(self, session: Session, file_service: GithubFileService):
         self.session = session
@@ -41,9 +44,10 @@ class RTIRequestService:
             if not request_data.file:
                 raise BadRequestException("RTI Request file is required")
 
-            _, ext = os.path.splitext(request_data.file.filename)
-            if not ext or ext.lower() not in self.ALLOWED_FILE_TYPES:
-                raise BadRequestException(f"{request_data.file.filename} doesn't have a valid extension ({', '.join(self.ALLOWED_FILE_TYPES)})")
+            ext = validate_upload_file(
+                request_data.file,
+                policy=FileValidationPolicy.RTI_REQUEST,
+            )
 
             # 1.1 Validate foreign keys
             if not self.session.get(Sender, request_data.sender_id):
@@ -296,9 +300,10 @@ class RTIRequestService:
 
             # 1. Update file if provided
             if request_data.file:
-                _, ext = os.path.splitext(request_data.file.filename)
-                if not ext or ext.lower() not in self.ALLOWED_FILE_TYPES:
-                    raise BadRequestException(f"{request_data.file.filename} doesn't have a valid extension ({', '.join(self.ALLOWED_FILE_TYPES)})")
+                ext = validate_upload_file(
+                    request_data.file,
+                    policy=FileValidationPolicy.RTI_REQUEST,
+                )
 
                 # Find the 'CREATED' status history to get the current file path
                 status_statement = select(RTIStatus).where(RTIStatus.name == RTIStatusName.CREATED)

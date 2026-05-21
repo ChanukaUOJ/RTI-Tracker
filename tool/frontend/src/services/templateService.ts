@@ -2,9 +2,11 @@ import { Template } from '../types/rti';
 import { AsgardeoContextProps } from '@asgardeo/react';
 import { ListResponse } from '../types/api';
 import { config } from '../config';
+import { fileTypePolicies, getDefaultGeneratedFileSpec } from '../constants/fileTypes';
 
 const API_BASE_URL = config.RTI_TRACKER_SERVER_URL;
 const FILE_STORAGE_BASE_URL = config.FILE_STORAGE_BASE_URL;
+const templateFilePolicy = fileTypePolicies.rtiTemplate;
 
 /**
  * Helper to convert template fields and content into Multipart FormData.
@@ -16,8 +18,9 @@ const toFormData = (title?: string, description?: string, content?: string): For
 
   if (content !== undefined) {
     // Convert content string to physical Markdown file for GitHub storage
-    const fileBlob = new Blob([content], { type: 'text/markdown' });
-    const fileName = `${(title || 'template').replace(/\s+/g, '_')}.md`;
+    const generatedFileSpec = getDefaultGeneratedFileSpec(templateFilePolicy);
+    const fileBlob = new Blob([content], { type: generatedFileSpec.mimeType });
+    const fileName = `${(title || 'template').replace(/\s+/g, '_')}${generatedFileSpec.extension}`;
     formData.append('file', fileBlob, fileName);
   }
   return formData;

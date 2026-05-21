@@ -17,6 +17,13 @@ import { Column } from '../types/table';
 import { sendersService } from '../services/sendersService';
 import { getVariableValues } from '../utils/variableUtils';
 import getStatusColor from '../utils/styleUtils';
+import {
+  getDefaultGeneratedFileSpec,
+  fileTypePolicies,
+  getAcceptValue,
+  isAcceptedFile,
+  stripPrimaryExtension,
+} from '../constants/fileTypes';
 
 import { useRTIRequest } from '../hooks/useRTIRequest';
 import { useEntityData } from '../hooks/useEntityData';
@@ -26,6 +33,7 @@ import { useDebounce } from '../hooks/useDebounce';
 type View = 'list' | 'create';
 
 export function RTIRequests() {
+  const requestFilePolicy = fileTypePolicies.rtiRequest;
   const navigate = useNavigate();
   const [view, setView] = useState<View>('list');
   const [search, setSearch] = useState('');
@@ -90,12 +98,12 @@ export function RTIRequests() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
+      if (!isAcceptedFile(file, requestFilePolicy)) {
         toast.error('Please upload a PDF file');
         return;
       }
       setUploadedFile(file);
-      setFormData(prev => ({ ...prev, title: file.name.replace(/\.pdf$/i, '') }));
+      setFormData(prev => ({ ...prev, title: stripPrimaryExtension(file.name, requestFilePolicy) }));
       setSelectionMode('upload');
       setStep(2);
     }
@@ -144,6 +152,7 @@ export function RTIRequests() {
         pdfFile = uploadedFile;
         finalMarkdown = 'File uploaded manually';
       } else {
+        const { mimeType } = getDefaultGeneratedFileSpec(requestFilePolicy);
         const { blob, fileName, finalMarkdown: generatedMarkdown } = await generateRTIPDF({
           title: formData.title,
           requestDate: formData.requestDate,
@@ -151,7 +160,7 @@ export function RTIRequests() {
           receiver,
           content: rawContent
         });
-        pdfFile = new File([blob], fileName, { type: 'application/pdf' });
+        pdfFile = new File([blob], fileName, { type: mimeType });
         finalMarkdown = generatedMarkdown;
         downloadBlob(blob, fileName);
       }
@@ -270,7 +279,7 @@ export function RTIRequests() {
                     <h3 className="text-xl font-bold text-gray-900 mb-2">Upload File</h3>
                     <p className="text-sm text-gray-600 mb-6">Upload a PDF from device</p>
                     <Button variant="outline" size="sm" className="px-6 border-green-600 text-green-700 hover:bg-green-600 hover:text-white">Select PDF</Button>
-                    <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={handleFileChange} />
+                    <input type="file" ref={fileInputRef} className="hidden" accept={getAcceptValue(requestFilePolicy)} onChange={handleFileChange} />
                   </div>
                 </div>
               ) : (

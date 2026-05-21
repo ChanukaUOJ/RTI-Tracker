@@ -1,4 +1,3 @@
-import os
 import logging
 from uuid import UUID, uuid4
 from sqlmodel import Session, select, func
@@ -25,6 +24,10 @@ from src.core.exceptions import (
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
+from src.utils.file_validation import (
+    FileValidationPolicy,
+    validate_upload_file,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +35,6 @@ class RTIRequestHistoryService:
     """
     This service is responsible for executing all RTI request history operations.
     """
-
-    ALLOWED_FILE_TYPES = [".pdf"]
-
     def __init__(self, session: Session, file_service: GithubFileService):
         self.session = session
         self.file_service = file_service
@@ -123,18 +123,20 @@ class RTIRequestHistoryService:
             # 3. Validate files
             if request_data.files:
                 for file in request_data.files:
-                    _, ext = os.path.splitext(file.filename)
-                    if not ext or ext.lower() not in self.ALLOWED_FILE_TYPES:
-                        raise BadRequestException(
-                            f"{file.filename} doesn't have a valid extension ({', '.join(self.ALLOWED_FILE_TYPES)})"
-                        )
+                    validate_upload_file(
+                        file,
+                        policy=FileValidationPolicy.RTI_HISTORY,
+                    )
 
             unique_history_id = uuid4()
             
             # 4. Upload files to GitHub
             if request_data.files:
                 for i, file in enumerate(request_data.files):
-                    _, ext = os.path.splitext(file.filename)
+                    ext = validate_upload_file(
+                        file,
+                        policy=FileValidationPolicy.RTI_HISTORY,
+                    )
                     file_path = f"rti-requests/{rti_request_id}/histories/{unique_history_id}/{unique_history_id}_{i}{ext.lower()}"
                     
                     content = await file.read()
@@ -242,18 +244,13 @@ class RTIRequestHistoryService:
 
             # 2. Handle new file uploads
             if request_data.files_to_add:
-                # Validate extensions
-                for file in request_data.files_to_add:
-                    _, ext = os.path.splitext(file.filename)
-                    if not ext or ext.lower() not in self.ALLOWED_FILE_TYPES:
-                        raise BadRequestException(
-                            f"{file.filename} doesn't have a valid extension ({', '.join(self.ALLOWED_FILE_TYPES)})"
-                        )
-                
                 # Upload new files
                 base_idx = len(history.files) if history.files else 0
                 for i, file in enumerate(request_data.files_to_add):
-                    _, ext = os.path.splitext(file.filename)
+                    ext = validate_upload_file(
+                        file,
+                        policy=FileValidationPolicy.RTI_HISTORY,
+                    )
                     file_path = f"rti-requests/{history.rti_request_id}/histories/{target_id}/{target_id}_{base_idx + i}{ext.lower()}"
                     
                     content = await file.read()
@@ -350,4 +347,3 @@ class RTIRequestHistoryService:
 
             logger.error(f"[RTI HISTORY SERVICE] Error deleting history {history_id}: {e}")
             raise InternalServerException(f"Failed to delete RTI request history: {e}") from e
-
