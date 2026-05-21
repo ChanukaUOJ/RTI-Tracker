@@ -41,17 +41,17 @@ INSERT INTO senders (name, email, address, contact_no) VALUES
 
 -- 4. RECEIVERS
 -- Linking using subqueries to match existing data
-INSERT INTO receivers (position_id, institution_id, email, address, contact_no) VALUES 
-((SELECT id FROM positions WHERE name = 'Information Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Ministry of Health' LIMIT 1), 'io.health@gov.lk', NULL, '0112444555'),
-((SELECT id FROM positions WHERE name = 'Designated Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Department of Education' LIMIT 1), 'do.edu@gov.lk', NULL, NULL),
-((SELECT id FROM positions WHERE name = 'Secretary' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Central Environmental Authority' LIMIT 1), NULL, 'Colombo', '0112888999'),
-((SELECT id FROM positions WHERE name = 'Director General' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Road Development Authority' LIMIT 1), 'dg.rda@gov.lk', 'Colombo', '0112000111'),
-((SELECT id FROM positions WHERE name = 'Legal Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Sri Lanka Police' LIMIT 1), NULL, NULL, '0112222333'),
-((SELECT id FROM positions WHERE name = 'Administrative Assistant' LIMIT 1), (SELECT id FROM institutions WHERE name = 'National Water Supply & Drainage Board' LIMIT 1), 'admin.nwsdb@gov.lk', 'Colombo', '0112555666'),
-((SELECT id FROM positions WHERE name = 'Research Analyst' LIMIT 1), (SELECT id FROM institutions WHERE name = 'University of Colombo' LIMIT 1), 'research.uoc@ac.lk', NULL, NULL),
-((SELECT id FROM positions WHERE name = 'Public Relations Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Sri Lanka Customs' LIMIT 1), 'pro.customs@gov.lk', 'Colombo', '0112111222'),
-((SELECT id FROM positions WHERE name = 'Chief Executive Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Ministry of Finance' LIMIT 1), 'ceo.finance@gov.lk', 'Gampaha', '0112999000'),
-((SELECT id FROM positions WHERE name = 'Department Head' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Public Service Commission' LIMIT 1), 'head.psc@gov.lk', 'Gampaha', NULL);
+INSERT INTO receivers (position_id, institution_id, emails, address, contact_nos) VALUES 
+((SELECT id FROM positions WHERE name = 'Information Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Ministry of Health' LIMIT 1), '["io.health@gov.lk"]', NULL, '["0112444555"]'),
+((SELECT id FROM positions WHERE name = 'Designated Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Department of Education' LIMIT 1), '["do.edu@gov.lk"]', NULL, '[]'),
+((SELECT id FROM positions WHERE name = 'Secretary' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Central Environmental Authority' LIMIT 1), '[]', 'Colombo', '["0112888999"]'),
+((SELECT id FROM positions WHERE name = 'Director General' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Road Development Authority' LIMIT 1), '["dg.rda@gov.lk"]', 'Colombo', '["0112000111"]'),
+((SELECT id FROM positions WHERE name = 'Legal Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Sri Lanka Police' LIMIT 1), '[]', NULL, '["0112222333"]'),
+((SELECT id FROM positions WHERE name = 'Administrative Assistant' LIMIT 1), (SELECT id FROM institutions WHERE name = 'National Water Supply & Drainage Board' LIMIT 1), '["admin.nwsdb@gov.lk"]', 'Colombo', '["0112555666"]'),
+((SELECT id FROM positions WHERE name = 'Research Analyst' LIMIT 1), (SELECT id FROM institutions WHERE name = 'University of Colombo' LIMIT 1), '["research.uoc@ac.lk"]', NULL, '[]'),
+((SELECT id FROM positions WHERE name = 'Public Relations Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Sri Lanka Customs' LIMIT 1), '["pro.customs@gov.lk"]', 'Colombo', '["0112111222"]'),
+((SELECT id FROM positions WHERE name = 'Chief Executive Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Ministry of Finance' LIMIT 1), '["ceo.finance@gov.lk"]', 'Gampaha', '["0112999000"]'),
+((SELECT id FROM positions WHERE name = 'Department Head' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Public Service Commission' LIMIT 1), '["head.psc@gov.lk"]', 'Gampaha', '[]');
 
 -- 5. RTI TEMPLATES
 INSERT INTO rti_templates (title, description, file) VALUES 
@@ -79,16 +79,16 @@ INSERT INTO rti_statuses (name) VALUES
 
 -- 7. RTI REQUESTS
 INSERT INTO rti_requests (title, description, sender_id, receiver_id, rti_template_id, created_at) VALUES 
-('Inquiry on Hospital Supplies', 'Requesting details of medicine availability for Colombo South Hospital.', (SELECT id FROM senders WHERE name = 'Amal Perera' LIMIT 1), (SELECT id FROM receivers WHERE email = 'io.health@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Health Statistics Request' LIMIT 1), NOW() - INTERVAL '30 days'),
-('School Expenditure 2024', 'Requesting budget allocation for primary schools in Jaffna.', (SELECT id FROM senders WHERE name = 'Bimali Silva' LIMIT 1), (SELECT id FROM receivers WHERE email = 'do.edu@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Education Data Request' LIMIT 1), NOW() - INTERVAL '29 days'),
-('Highway Project Budget', 'Details on the funding sources for the Central Expressway Phase III.', (SELECT id FROM senders WHERE name = 'Chamara Bandara' LIMIT 1), (SELECT id FROM receivers WHERE email = 'dg.rda@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Infrastructure Project Details' LIMIT 1), NOW() - INTERVAL '28 days'),
-('Environmental Clearance List', 'Requesting a list of projects approved in wetlands during 2023.', (SELECT id FROM senders WHERE name = 'Dilini Fernando' LIMIT 1), (SELECT id FROM receivers WHERE contact_no = '0112888999' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Environmental Impact Inquiry' LIMIT 1), NOW() - INTERVAL '27 days'),
-('Police Recruitment Ratio', 'Requesting data on gender ratio in recent constable recruitment.', (SELECT id FROM senders WHERE name = 'Eshani Jayawardena' LIMIT 1), (SELECT id FROM receivers WHERE contact_no = '0112222333' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Public Service Vacancy Info' LIMIT 1), NOW() - INTERVAL '26 days'),
-('NWSDB Water Quality Data', 'Requesting seasonal water quality reports for Kandy district.', (SELECT id FROM senders WHERE name = 'Fathima Nasreen' LIMIT 1), (SELECT id FROM receivers WHERE email = 'admin.nwsdb@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Water Supply Project Status' LIMIT 1), NOW() - INTERVAL '25 days'),
-('University Research Grants', 'Summary of research grants awarded to UoC faculty in 2025.', (SELECT id FROM senders WHERE name = 'Gayan Ratnayake' LIMIT 1), (SELECT id FROM receivers WHERE email = 'research.uoc@ac.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'General Request Template' LIMIT 1), NOW() - INTERVAL '24 days'),
-('Customs Duty Exemptions', 'List of organizations granted duty exemptions for vehicle imports.', (SELECT id FROM senders WHERE name = 'Harsha Kumara' LIMIT 1), (SELECT id FROM receivers WHERE email = 'pro.customs@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Customs Import/Export Data' LIMIT 1), NOW() - INTERVAL '23 days'),
-('Foreign Debt Repayment', 'Quarterly report on interest paid toward sovereign bonds.', (SELECT id FROM senders WHERE name = 'Iromi Wickramasinghe' LIMIT 1), (SELECT id FROM receivers WHERE email = 'ceo.finance@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Financial Expenditure Inquiry' LIMIT 1), NOW() - INTERVAL '22 days'),
-('PSC Disciplinary Actions', 'Stats on administrative inquiries concluded in the last 6 months.', (SELECT id FROM senders WHERE name = 'Janaka Abeysekera' LIMIT 1), (SELECT id FROM receivers WHERE email = 'head.psc@gov.lk' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Legal Proceeding Inquiry' LIMIT 1), NOW() - INTERVAL '21 days');
+('Inquiry on Hospital Supplies', 'Requesting details of medicine availability for Colombo South Hospital.', (SELECT id FROM senders WHERE name = 'Amal Perera' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["io.health@gov.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Health Statistics Request' LIMIT 1), NOW() - INTERVAL '30 days'),
+('School Expenditure 2024', 'Requesting budget allocation for primary schools in Jaffna.', (SELECT id FROM senders WHERE name = 'Bimali Silva' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["do.edu@gov.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Education Data Request' LIMIT 1), NOW() - INTERVAL '29 days'),
+('Highway Project Budget', 'Details on the funding sources for the Central Expressway Phase III.', (SELECT id FROM senders WHERE name = 'Chamara Bandara' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["dg.rda@gov.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Infrastructure Project Details' LIMIT 1), NOW() - INTERVAL '28 days'),
+('Environmental Clearance List', 'Requesting a list of projects approved in wetlands during 2023.', (SELECT id FROM senders WHERE name = 'Dilini Fernando' LIMIT 1), (SELECT id FROM receivers WHERE contact_nos @> '["0112888999"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Environmental Impact Inquiry' LIMIT 1), NOW() - INTERVAL '27 days'),
+('Police Recruitment Ratio', 'Requesting data on gender ratio in recent constable recruitment.', (SELECT id FROM senders WHERE name = 'Eshani Jayawardena' LIMIT 1), (SELECT id FROM receivers WHERE contact_nos @> '["0112222333"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Public Service Vacancy Info' LIMIT 1), NOW() - INTERVAL '26 days'),
+('NWSDB Water Quality Data', 'Requesting seasonal water quality reports for Kandy district.', (SELECT id FROM senders WHERE name = 'Fathima Nasreen' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["admin.nwsdb@gov.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Water Supply Project Status' LIMIT 1), NOW() - INTERVAL '25 days'),
+('University Research Grants', 'Summary of research grants awarded to UoC faculty in 2025.', (SELECT id FROM senders WHERE name = 'Gayan Ratnayake' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["research.uoc@ac.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'General Request Template' LIMIT 1), NOW() - INTERVAL '24 days'),
+('Customs Duty Exemptions', 'List of organizations granted duty exemptions for vehicle imports.', (SELECT id FROM senders WHERE name = 'Harsha Kumara' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["pro.customs@gov.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Customs Import/Export Data' LIMIT 1), NOW() - INTERVAL '23 days'),
+('Foreign Debt Repayment', 'Quarterly report on interest paid toward sovereign bonds.', (SELECT id FROM senders WHERE name = 'Iromi Wickramasinghe' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["ceo.finance@gov.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Financial Expenditure Inquiry' LIMIT 1), NOW() - INTERVAL '22 days'),
+('PSC Disciplinary Actions', 'Stats on administrative inquiries concluded in the last 6 months.', (SELECT id FROM senders WHERE name = 'Janaka Abeysekera' LIMIT 1), (SELECT id FROM receivers WHERE emails @> '["head.psc@gov.lk"]' LIMIT 1), (SELECT id FROM rti_templates WHERE title = 'Legal Proceeding Inquiry' LIMIT 1), NOW() - INTERVAL '21 days');
 
 -- 8. RTI STATUS HISTORIES
 -- First, add the mandatory 'CREATED' status for every request
@@ -145,8 +145,8 @@ WHERE title = 'Education Data Request';
 
 -- Scenario 4: Update a receiver
 UPDATE receivers
-SET email = 'do.edu.updated@gov.lk', updated_at = NOW()
-WHERE email = 'do.edu@gov.lk';
+SET emails = '["do.edu.updated@gov.lk","do.edu2@gov.lk","do.edu@gov.lk"]'::jsonb, updated_at = NOW()
+WHERE emails @> '["do.edu@gov.lk"]';
 
 -- Scenario 5: Update an institution
 UPDATE institutions

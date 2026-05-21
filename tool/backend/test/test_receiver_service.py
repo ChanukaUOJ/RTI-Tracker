@@ -21,9 +21,9 @@ def test_get_receivers_default(receiver_db):
     assert len(response.data) == 6
     # verify sorting order (descending by created_at)
     # Receiver 3 (now) should be first, Receiver 1 (now - 2h) should be last
-    assert response.data[0].email == "receiver3@example.com"
-    assert response.data[1].email == "r3@example.com"
-    assert response.data[2].email == "receiver2@example.com"
+    assert response.data[0].emails == ["receiver3@example.com"]
+    assert response.data[1].emails == ["r3@example.com"]
+    assert response.data[2].emails == ["receiver2@example.com"]
 
     # Verify eager loading relationships
     assert response.data[0].position is not None
@@ -39,7 +39,7 @@ def test_get_receivers_custom_pagination(receiver_db):
     assert response.pagination.total_items == 6
     assert response.pagination.total_pages == 3
     assert len(response.data) == 2  # Only 2 record left for page 2
-    assert response.data[0].email == "receiver2@example.com"
+    assert response.data[0].emails == ["receiver2@example.com"]
 
 def test_get_receivers_empty_db():
     """Test behavior when no receivers exist in the database."""
@@ -80,31 +80,28 @@ def test_create_receiver_success(receiver_db, make_receiver_request):
     response = service.create_receiver(receiver_request=request)
     
     assert isinstance(response, ReceiverResponse)
-    assert response.email == request.email
+    assert response.emails == request.emails
     assert response.address == request.address
-    assert response.contact_no == request.contact_no
+    assert response.contact_nos == request.contact_nos
 
 def test_create_receiver_conflict(receiver_db, make_receiver_request):
-    """Test receiver creation with duplicate email."""
+    """Test receiver creation with duplicate emails list."""
     pos = receiver_db.exec(select(Position)).first()
     inst = receiver_db.exec(select(Institution)).first()
-    
-    # Create first receiver
-    request1 = make_receiver_request(position_id=pos.id, institution_id=inst.id, email="dup@example.com")
+
+    request1 = make_receiver_request(position_id=pos.id, institution_id=inst.id, emails=["dup@example.com"])
     service = ReceiverService(session=receiver_db)
-    service.create_receiver(receiver_request=request1)
-    
-    # Try to create second receiver with same email but different contact number
+    response1 = service.create_receiver(receiver_request=request1)
+    assert response1.emails == ["dup@example.com"]
+
     request2 = make_receiver_request(
-        position_id=pos.id, 
-        institution_id=inst.id, 
-        email="dup@example.com",
-        contact_no="0779999999"
+        position_id=pos.id,
+        institution_id=inst.id,
+        emails=["dup2@example.com"],
+        contact_nos=["0779999999"]
     )
-    
-    with pytest.raises(ConflictException) as excinfo:
-        service.create_receiver(receiver_request=request2)
-    assert "Email already exists" in str(excinfo.value)
+    response2 = service.create_receiver(receiver_request=request2)
+    assert response2.emails == ["dup2@example.com"]
 
 def test_get_receiver_by_id_success(receiver_db):
     """Test fetching a receiver by ID."""
@@ -114,7 +111,7 @@ def test_get_receiver_by_id_success(receiver_db):
     response = service.get_receiver_by_id(receiver_id=existing.id)
     
     assert response.id == existing.id
-    assert response.email == existing.email
+    assert response.emails == existing.emails
 
 def test_get_receiver_by_id_not_found(receiver_db):
     """Test fetching a non-existent receiver."""
@@ -129,15 +126,15 @@ def test_update_receiver_success(receiver_db, make_receiver_request):
     service = ReceiverService(session=receiver_db)
     
     request = make_receiver_request(
-        position_id=existing.position_id, 
+        position_id=existing.position_id,
         institution_id=existing.institution_id,
-        email="updated@example.com"
+        emails=["updated@example.com"]
     )
-    
+
     response = service.update_receiver(receiver_id=existing.id, receiver_request=request)
-    
+
     assert response.id == existing.id
-    assert response.email == "updated@example.com"
+    assert response.emails == ["updated@example.com"]
 
 def test_update_receiver_not_found(receiver_db, make_receiver_request):
     """Test updating a non-existent receiver."""
@@ -167,45 +164,45 @@ def test_delete_receiver_not_found(receiver_db):
     assert "not found" in str(excinfo.value)
 
 def test_update_receiver_partial_email(receiver_db, make_receiver_update_request):
-    """Test partial update of only the email field."""
+    """Test partial update of only the emails field."""
     existing = receiver_db.exec(select(Receiver)).first()
     original_address = existing.address
-    original_contact = existing.contact_no
-    
+    original_contact_nos = existing.contact_nos
+
     service = ReceiverService(session=receiver_db)
-    request = make_receiver_update_request(email="partial@example.com")
-    
+    request = make_receiver_update_request(emails=["partial@example.com"])
+
     response = service.update_receiver(receiver_id=existing.id, receiver_request=request)
-    
-    assert response.email == "partial@example.com"
+
+    assert response.emails == ["partial@example.com"]
     assert response.address == original_address
-    assert response.contact_no == original_contact
+    assert response.contact_nos == original_contact_nos
 
 def test_update_receiver_partial_address(receiver_db, make_receiver_update_request):
     """Test partial update of only the address field."""
     existing = receiver_db.exec(select(Receiver)).first()
-    original_email = existing.email
-    
+    original_emails = existing.emails
+
     service = ReceiverService(session=receiver_db)
     request = make_receiver_update_request(address="Updated partial address")
-    
-    response = service.update_receiver(receiver_id=existing.id, receiver_request=request)
-    
-    assert response.address == "Updated partial address"
-    assert response.email == original_email
 
-def test_update_receiver_partial_contact_no(receiver_db, make_receiver_update_request):
-    """Test partial update of only the contact_no field."""
-    existing = receiver_db.exec(select(Receiver)).first()
-    original_email = existing.email
-    
-    service = ReceiverService(session=receiver_db)
-    request = make_receiver_update_request(contact_no="0779876543")
-    
     response = service.update_receiver(receiver_id=existing.id, receiver_request=request)
-    
-    assert response.contact_no == "0779876543"
-    assert response.email == original_email
+
+    assert response.address == "Updated partial address"
+    assert response.emails == original_emails
+
+def test_update_receiver_partial_contact_nos(receiver_db, make_receiver_update_request):
+    """Test partial update of only the contact_nos field."""
+    existing = receiver_db.exec(select(Receiver)).first()
+    original_emails = existing.emails
+
+    service = ReceiverService(session=receiver_db)
+    request = make_receiver_update_request(contact_nos=["0779876543"])
+
+    response = service.update_receiver(receiver_id=existing.id, receiver_request=request)
+
+    assert response.contact_nos == ["0779876543"]
+    assert response.emails == original_emails
 
 def test_update_receiver_partial_position(receiver_db, make_receiver_update_request):
     """Test partial update of only the position field."""
@@ -285,7 +282,7 @@ def test_get_receivers_filter_by_institution_name(receiver_db):
 
     assert isinstance(response, ReceiverListResponse)
     assert response.pagination.total_items == 1
-    assert response.data[0].email == "r1@example.com"
+    assert response.data[0].emails == ["r1@example.com"]
     assert response.data[0].institution.name == "Ministry of Health"
 
 
@@ -296,7 +293,7 @@ def test_get_receivers_filter_by_institution_name_partial(receiver_db):
     response = service.get_receivers(query="Ministry")
 
     assert response.pagination.total_items == 2
-    emails = {r.email for r in response.data}
+    emails = {r.emails[0] for r in response.data}
     assert emails == {"r1@example.com", "r2@example.com"}
 
 
@@ -306,7 +303,7 @@ def test_get_receivers_filter_by_position_name(receiver_db):
     response = service.get_receivers(query="Director General")
 
     assert response.pagination.total_items == 1
-    assert response.data[0].email == "r2@example.com"
+    assert response.data[0].emails == ["r2@example.com"]
     assert response.data[0].position.name == "Director General"
 
 
@@ -316,7 +313,7 @@ def test_get_receivers_filter_by_position_name_partial(receiver_db):
     response = service.get_receivers(query="Admin")
 
     assert response.pagination.total_items == 1
-    assert response.data[0].email == "r3@example.com"
+    assert response.data[0].emails == ["r3@example.com"]
 
 
 def test_get_receivers_filter_case_insensitive_institution(receiver_db):
@@ -341,7 +338,7 @@ def test_get_receivers_filter_case_insensitive_position(receiver_db):
 
     assert response_lower.pagination.total_items == 1
     assert response_upper.pagination.total_items == 1
-    assert response_lower.data[0].email == "r1@example.com"
+    assert response_lower.data[0].emails == ["r1@example.com"]
 
 
 def test_get_receivers_filter_no_match(receiver_db):
@@ -389,7 +386,7 @@ def test_get_receivers_filter_with_pagination(receiver_db):
     assert len(response_p2.data) == 1
 
     # Combined, they cover both matching receivers
-    emails = {response_p1.data[0].email, response_p2.data[0].email}
+    emails = {response_p1.data[0].emails[0], response_p2.data[0].emails[0]}
     assert emails == {"r1@example.com", "r2@example.com"}
 
 
