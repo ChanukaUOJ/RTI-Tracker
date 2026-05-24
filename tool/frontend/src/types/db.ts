@@ -26,8 +26,8 @@ export interface Receiver {
   id: string;
   institution: Institution;
   position: Position;
-  email: string | null;
-  contactNo: string | null;
+  emails: string[] | null;
+  contactNos: string[] | null;
   address: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -56,8 +56,8 @@ export interface RTIRequest {
   };
   receiver: {
     id: string;
-    email: string | null;
-    contactNo: string | null;
+    emails: string[] | null;
+    contactNos: string[] | null;
     address: string | null;
     institution: { id: string; name: string };
     position: { id: string; name: string };

@@ -255,24 +255,40 @@ export function RTIDetail() {
                 <div className="space-y-3">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Contact Details</h3>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      {request?.receiver?.email ? (
-                        <a
-                          href={`mailto:${request.receiver.email}`}
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                        >
-                          {request.receiver.email}
-                        </a>
+                    <div className="flex items-start gap-3">
+                      <Mail className="w-4 h-4 text-gray-400 mt-0.5" />
+                      {request?.receiver?.emails && request.receiver.emails.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {request.receiver.emails.map((email: string, i: number) => (
+                            <a
+                              key={i}
+                              href={`mailto:${email}`}
+                              className="inline-flex items-center text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full hover:bg-blue-100 hover:text-blue-800 hover:border-blue-200 transition-colors"
+                            >
+                              {email}
+                            </a>
+                          ))}
+                        </div>
                       ) : (
-                        <p className="text-xs font-semibold text-gray-600">No email address</p>
+                        <p className="text-xs font-semibold text-gray-600 mt-0.5">No email address</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <p data-testid="receiver-contactNo" className="text-sm font-semibold text-gray-900">
-                        {request?.receiver?.contactNo || 'No contact number'}
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                      {request?.receiver?.contactNos && request.receiver.contactNos.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {request.receiver.contactNos.map((contact: string, i: number) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center text-[11px] font-semibold bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-full"
+                            >
+                              {contact}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs font-semibold text-gray-600 mt-0.5">No contact number</p>
+                      )}
                     </div>
                   </div>
                 </div>
