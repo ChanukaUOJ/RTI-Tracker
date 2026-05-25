@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS rti_templates (
 
 -- RTI REQUESTS TABLE
 CREATE TABLE IF NOT EXISTS rti_requests (
-    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id int GENERATED ALWAYS AS IDENTITY (START WITH 100001 INCREMENT BY 1) PRIMARY KEY,
     title VARCHAR NOT NULL,
     description TEXT,
     sender_id uuid NOT NULL REFERENCES senders(id),
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS rti_statuses (
 -- RTI STATUS HISTORIES TABLE
 CREATE TABLE IF NOT EXISTS rti_status_histories (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    rti_request_id uuid NOT NULL REFERENCES rti_requests(id),
+    rti_request_id int NOT NULL REFERENCES rti_requests(id),
     status_id uuid NOT NULL REFERENCES rti_statuses(id),
     direction rti_direction NOT NULL,
     description TEXT,

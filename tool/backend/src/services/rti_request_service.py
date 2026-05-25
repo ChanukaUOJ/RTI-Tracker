@@ -37,7 +37,6 @@ class RTIRequestService:
     ) -> RTIRequestResponse:
         committed = False
         try:
-            unique_id = uuid4()
             uploaded_file_path: str | None = None
 
             # 1. validate file extension
@@ -57,24 +56,7 @@ class RTIRequestService:
             if request_data.rti_template_id and not self.session.get(RTITemplate, request_data.rti_template_id):
                 raise NotFoundException(f"RTI Template with id {request_data.rti_template_id} not found.")
     
-            file_path = f"rti-requests/{unique_id}/{unique_id}{ext.lower()}"
-
-            # 2. Upload file
-            content = await request_data.file.read()
-            response = await self.file_service.create_file(
-                file_path=file_path,
-                content=content,
-                message=f"Upload file for RTI Request {unique_id}"
-            )
-
-            relative_path = response.get("relative_path", "")
-            if not relative_path:
-                await self.file_service.delete_file(file_path=file_path)
-                raise InternalServerException("[RTI SERVICE] Invalid path response from file service")
-
-            uploaded_file_path = relative_path
-
-            # 3. Insert RTIRequest
+            # 2. Insert RTIRequest to get generated ID
             creation_time = datetime.now(timezone.utc)
             if request_data.created_date:
                 try:
@@ -88,7 +70,6 @@ class RTIRequestService:
                         logger.warning(f"Invalid created_at format: {request_data.created_date}, defaulting to now")
 
             rti_request = RTIRequest(
-                id=unique_id,
                 title=request_data.title,
                 description=request_data.description,
                 sender_id=request_data.sender_id,
@@ -96,6 +77,24 @@ class RTIRequestService:
                 rti_template_id=request_data.rti_template_id
             )
             self.session.add(rti_request)
+            self.session.flush()
+
+            file_path = f"rti-requests/{rti_request.id}/{rti_request.id}{ext.lower()}"
+
+            # 3. Upload file
+            content = await request_data.file.read()
+            response = await self.file_service.create_file(
+                file_path=file_path,
+                content=content,
+                message=f"Upload file for RTI Request {rti_request.id}"
+            )
+
+            relative_path = response.get("relative_path", "")
+            if not relative_path:
+                await self.file_service.delete_file(file_path=file_path)
+                raise InternalServerException("[RTI SERVICE] Invalid path response from file service")
+
+            uploaded_file_path = relative_path
 
             # 4. Insert RTIStatusHistory
             statement = select(RTIStatus).where(RTIStatus.name == RTIStatusName.CREATED)
@@ -106,7 +105,7 @@ class RTIRequestService:
 
             status_history = RTIStatusHistory(
                 id=uuid4(),
-                rti_request_id=unique_id,
+                rti_request_id=rti_request.id,
                 status_id=created_status.id,
                 direction=RTIDirection.sent,
                 description="RTI Request Created",
@@ -240,14 +239,11 @@ class RTIRequestService:
     def get_rti_request_by_id(
         self,
         *,
-        request_id: UUID
+        request_id: int
     ) -> RTIRequestResponse:
         """Fetches a single RTI Request by its ID."""
         try:
-            try:
-                target_id = UUID(request_id) if isinstance(request_id, str) else request_id
-            except ValueError:
-                raise BadRequestException(f"Invalid UUID format: {request_id}")
+            target_id = request_id
 
             rti_request = self.session.get(RTIRequest, target_id)
 
@@ -412,7 +408,7 @@ class RTIRequestService:
     async def delete_rti_request(
         self,
         *,
-        request_id: UUID
+        request_id: int
     ) -> None:
         """Deletes an RTI Request and its associated history and files."""
         try:

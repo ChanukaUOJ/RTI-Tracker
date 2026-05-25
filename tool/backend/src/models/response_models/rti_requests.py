@@ -12,7 +12,7 @@ from .rti_statuses import RTICurrentStatusResponse
 class RTIRequestResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID = Field(..., description="Unique identifier for the RTI Request")
+    id: int = Field(..., description="Unique identifier for the RTI Request")
     title: str = Field(..., description="Title of the RTI Request")
     description: Optional[str] = Field(None, description="Detailed description of the RTI Request")
     sender: SenderShortResponse = Field(..., description="Sender object of the RTI Request")

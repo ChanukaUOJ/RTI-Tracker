@@ -12,7 +12,7 @@ class RTIRequestHistoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True)
 
     id: UUID = Field(..., description="Unique identifier for the RTI Status History")
-    rti_request_id: UUID = Field(
+    rti_request_id: int = Field(
         ...,
         serialization_alias="rtiRequestId",
         description="Unique identifier for the associated RTI Request",
