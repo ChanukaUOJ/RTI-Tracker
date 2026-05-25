@@ -144,10 +144,6 @@ class ReceiverService:
         except IntegrityError as e:
             self.session.rollback()
             error_msg = str(e.orig)
-            if "receivers_emails_key" in error_msg or "receivers.emails" in error_msg:
-                raise ConflictException("Email already exists for another receiver.")
-            if "receivers_contact_nos_key" in error_msg or "receivers.contact_nos" in error_msg:
-                raise ConflictException("Contact number already exists for another receiver.")
             
             # Clean up the DB error message to return it directly
             clean_error = error_msg.replace('\n', ' ').strip()

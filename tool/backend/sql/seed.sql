@@ -45,7 +45,7 @@ INSERT INTO receivers (position_id, institution_id, emails, address, contact_nos
 ((SELECT id FROM positions WHERE name = 'Information Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Ministry of Health' LIMIT 1), '["io.health@gov.lk"]', NULL, '["0112444555"]'),
 ((SELECT id FROM positions WHERE name = 'Designated Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Department of Education' LIMIT 1), '["do.edu@gov.lk"]', NULL, '[]'),
 ((SELECT id FROM positions WHERE name = 'Secretary' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Central Environmental Authority' LIMIT 1), '[]', 'Colombo', '["0112888999"]'),
-((SELECT id FROM positions WHERE name = 'Director General' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Road Development Authority' LIMIT 1), '["dg.rda@gov.lk"]', 'Colombo', '["0112000111","0771212123","0789090987","0771212123","0789090987"]'),
+((SELECT id FROM positions WHERE name = 'Director General' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Road Development Authority' LIMIT 1), '["dg.rda@gov.lk"]', 'Colombo', '["0112000111","0771212123","0789090987","0771212121","0789090988"]'),
 ((SELECT id FROM positions WHERE name = 'Legal Officer' LIMIT 1), (SELECT id FROM institutions WHERE name = 'Sri Lanka Police' LIMIT 1), '[]', NULL, '["0112222333"]'),
 ((SELECT id FROM positions WHERE name = 'Administrative Assistant' LIMIT 1), (SELECT id FROM institutions WHERE name = 'National Water Supply & Drainage Board' LIMIT 1), '["admin.nwsdb@gov.lk"]', 'Colombo', '["0112555666"]'),
 ((SELECT id FROM positions WHERE name = 'Research Analyst' LIMIT 1), (SELECT id FROM institutions WHERE name = 'University of Colombo' LIMIT 1), '["research.uoc@ac.lk"]', NULL, '[]'),

@@ -39,6 +39,7 @@ const receiverSchema = yup.object().shape({
     .of(
       yup
         .string()
+        .required()
         .matches(EMAIL_RE, 'Please enter a valid email address')
     )
     .nullable(),
@@ -47,6 +48,7 @@ const receiverSchema = yup.object().shape({
     .of(
       yup
         .string()
+        .required()
         .test('is-sl-phone', 'Please enter a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567)', v => {
           if (!v) return true;
           return PHONE_RE.test(v);
@@ -146,7 +148,7 @@ export function Receivers() {
     setValue: setReceiverValue,
     formState: { errors: receiverErrors }
   } = useForm<ReceiverFormValues>({
-    resolver: yupResolver(receiverSchema) as any,
+    resolver: yupResolver(receiverSchema),
     defaultValues: {
       institutionId: '',
       positionId: '',
@@ -231,7 +233,7 @@ export function Receivers() {
         institutionId: data.institutionId,
         positionId: data.positionId,
         emails: data.emails ?? [],
-        contactNos: data.contactNos ?? [],
+        contactNos: data.contactNos?.map(n => n.replace(/-/g, '')) ?? [],
         address: data.address ?? null,
       };
       if (receiverEdit) {
