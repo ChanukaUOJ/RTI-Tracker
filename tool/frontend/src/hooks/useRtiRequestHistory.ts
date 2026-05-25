@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 /**
  * Hook to fetch history for a specific RTI request.
  */
-export function useRtiRequestHistories(rtiRequestId: string, page: number = 1, pageSize: number = 100) {
+export function useRtiRequestHistories(rtiRequestId: number, page: number = 1, pageSize: number = 100) {
   const { http, isSignedIn } = useAsgardeo();
   return useQuery({
     queryKey: ['rti-requests', rtiRequestId, 'histories', { page, pageSize }],
@@ -23,7 +23,7 @@ export function useCreateRtiRequestHistory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ rtiRequestId, payload }: { 
-      rtiRequestId: string, 
+      rtiRequestId: number, 
       payload: {
         statusId: string;
         direction: 'sent' | 'received';
@@ -51,7 +51,7 @@ export function useUpdateRtiRequestHistory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ rtiRequestId, historyId, payload }: { 
-      rtiRequestId: string, 
+      rtiRequestId: number, 
       historyId: string, 
       payload: {
         statusId?: string;
@@ -80,7 +80,7 @@ export function useDeleteRtiRequestHistory() {
   const { http } = useAsgardeo();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ rtiRequestId, historyId }: { rtiRequestId: string, historyId: string }) =>
+    mutationFn: ({ rtiRequestId, historyId }: { rtiRequestId: number, historyId: string }) =>
       rtiRequestHistoryService.deleteHistory(rtiRequestId, historyId, http),
     onSuccess: (_, { rtiRequestId }) => {
       queryClient.invalidateQueries({ queryKey: ['rti-requests', rtiRequestId, 'histories'] });

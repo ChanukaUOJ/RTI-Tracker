@@ -21,7 +21,7 @@ export function useRTIRequest(page: number = 1, pageSize: number = 10, search?: 
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => rtiRequestsService.remove(id, http),
+    mutationFn: (id: number) => rtiRequestsService.remove(id, http),
     onSuccess: () => {
       if (query.data?.data?.length === 1 && page > 1 && onPageChange) {
         onPageChange(page - 1);
@@ -41,7 +41,7 @@ export function useRTIRequest(page: number = 1, pageSize: number = 10, search?: 
   };
 }
 
-export function useRTIRequestDetail(id: string) {
+export function useRTIRequestDetail(id: number) {
   const { http, isSignedIn } = useAsgardeo();
 
   return useQuery({

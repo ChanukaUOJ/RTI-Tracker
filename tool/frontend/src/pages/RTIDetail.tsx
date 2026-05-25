@@ -18,9 +18,11 @@ export function RTIDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const numericId = id ? Number(id) : 0;
+
   // TanStack Hooks
-  const { data: request, isLoading: isRequestLoading, error: requestError } = useRTIRequestDetail(id || '');
-  const { data: historyResponse, isLoading: isHistoryLoading } = useRtiRequestHistories(id || '');
+  const { data: request, isLoading: isRequestLoading, error: requestError } = useRTIRequestDetail(numericId);
+  const { data: historyResponse, isLoading: isHistoryLoading } = useRtiRequestHistories(numericId);
 
   const { data: statusesResponse, isLoading: isStatusesLoading } = useStatuses(1, 100);
   const statuses: RTIStatus[] = statusesResponse?.data || [];
@@ -101,7 +103,7 @@ export function RTIDetail() {
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    if (!numericId) return;
 
     // Validation: Require at least one document except for COMPLETED
     // const totalFiles = eventFormData.existingFiles.length + eventFormData.newFiles.length;
@@ -116,7 +118,7 @@ export function RTIDetail() {
         const filesToDelete = selectedEntry.files.filter(f => !eventFormData.existingFiles.includes(f));
 
         await updateHistoryMutation.mutateAsync({
-          rtiRequestId: id,
+          rtiRequestId: numericId,
           historyId: selectedEntry.id,
           payload: {
             statusId: selectedStatusToSave.id,
@@ -131,7 +133,7 @@ export function RTIDetail() {
         toast.success('Event updated');
       } else {
         await createHistoryMutation.mutateAsync({
-          rtiRequestId: id,
+          rtiRequestId: numericId,
           payload: {
             statusId: selectedStatusToSave.id,
             direction: eventFormData.direction,
@@ -153,11 +155,11 @@ export function RTIDetail() {
   };
 
   const confirmDeleteEntry = async () => {
-    if (!selectedEntry || !id) return;
+    if (!selectedEntry || !numericId) return;
 
     try {
       await deleteHistoryMutation.mutateAsync({
-        rtiRequestId: id,
+        rtiRequestId: numericId,
         historyId: selectedEntry.id
       });
       toast.success('Event deleted');
@@ -171,10 +173,10 @@ export function RTIDetail() {
   const isCompleted = completedStatus && history.some(h => h.rtiStatus.id === completedStatus.id);
 
   const handleMarkCompleted = async () => {
-    if (!id || !completedStatus) return;
+    if (!numericId || !completedStatus) return;
     try {
       await createHistoryMutation.mutateAsync({
-        rtiRequestId: id,
+        rtiRequestId: numericId,
         payload: {
           statusId: completedStatus.id,
           direction: 'received',

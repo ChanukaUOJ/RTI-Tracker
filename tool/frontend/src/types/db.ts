@@ -43,7 +43,7 @@ export interface RTITemplateDB {
 }
 
 export interface RTIRequest {
-  id: string;
+  id: number;
   referenceId?: string;
   title: string;
   description: string | null;
@@ -83,7 +83,7 @@ export interface RTIStatus {
 }
 export interface RTIStatusHistory {
   id: string;
-  rtiRequestId: string;
+  rtiRequestId: number;
   rtiStatus: RTIStatus;
   direction: 'received' | 'sent';
   description: string | null;
