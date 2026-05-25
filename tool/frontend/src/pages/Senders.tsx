@@ -16,14 +16,19 @@ import { yupResolver } from "@hookform/resolvers/yup";
 // sender form schema
 const senderSchema = yup.object().shape({
     name: yup.string().required('Sender name is required'),
-    email: yup.string().trim().required('Email address is required').transform(v => v === '' ? null : v)
+    email: yup.string().trim().nullable().transform(v => v === '' ? null : v)
         .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address'),
     contactNo: yup.string().trim().nullable().transform(v => v === '' ? null : v)
         .test('is-sl-phone', 'Please enter a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567)', value => {
             if (!value) return true;
-            return /^(?:\+94|0)[1-9][0-9]{8}$/.test(value);
+            return /^(?:\+94|0)\d{9}$/.test(value);
         }),
     address: yup.string().nullable().transform(v => v === '' ? null : v),
+}).test('contact-required', 'Either Email or Contact No is required', function (value) {
+    if (!value.email && !value.contactNo) {
+        return this.createError({ path: 'email', message: 'Email or Contact No is required' });
+    }
+    return true;
 });
 
 export function Senders() {
