@@ -18,7 +18,7 @@ export function RTIDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const numericId = id ? Number(id) : 0;
+  const numericId = parseInt(id || '', 10) || 0;
 
   // TanStack Hooks
   const { data: request, isLoading: isRequestLoading, error: requestError } = useRTIRequestDetail(numericId);

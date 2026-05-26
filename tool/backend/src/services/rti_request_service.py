@@ -120,8 +120,6 @@ class RTIRequestService:
 
             return RTIRequestResponse.model_validate(rti_request)
 
-        except (BadRequestException, NotFoundException, ConflictException, InternalServerException):
-            raise
         except Exception as e:
             if not committed:
                 self.session.rollback()
@@ -131,6 +129,10 @@ class RTIRequestService:
                         await self.file_service.delete_file(file_path=uploaded_file_path)
                     except Exception as ex:
                         logger.error(f"[RTI SERVICE] Compensating transaction failed — could not delete {uploaded_file_path}: {ex}")
+            
+            # re raise errors
+            if isinstance(e, (BadRequestException, NotFoundException, ConflictException, InternalServerException)):
+                raise
 
             if isinstance(e, IntegrityError):
                 logger.error(f"[RTI SERVICE] Integrity error creating RTI request: {e}")

@@ -139,7 +139,7 @@ class RTIRequest(SQLModel, table=True):
     __tablename__ = "rti_requests"
 
     # table fields
-    id: int = Field(primary_key=True, description="Unique identifier for the rti request")
+    id: Optional[int] = Field(default=None, primary_key=True, description="Unique identifier for the rti request")
     title: str = Field(description="title of the rti request")
     description: Optional[str] = Field(default=None, description="description of the rti request")
     sender_id: UUID = Field(foreign_key="senders.id", description="ID of the sender")
