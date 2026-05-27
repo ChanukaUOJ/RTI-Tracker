@@ -10,6 +10,7 @@ import { RTIRequests } from './pages/RTIRequests';
 import { RTIDetail } from './pages/RTIDetail';
 import { Statuses } from './pages/Statuses';
 import { useAsgardeo } from '@asgardeo/react';
+import { Senders } from './pages/Senders';
 
 export function App() {
   const { isLoading, isSignedIn } = useAsgardeo();
@@ -31,6 +32,7 @@ export function App() {
           <Route path="rti-requests" element={<RTIRequests />} />
           <Route path="rti-requests/:id" element={<RTIDetail />} />
           <Route path="statuses" element={<Statuses />} />
+          <Route path="senders" element={<Senders />} />
         </Route>
         <Route path="/signin" element={<LoginRedirect />} />
       </Routes>
