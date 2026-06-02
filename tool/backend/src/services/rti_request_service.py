@@ -1,7 +1,7 @@
 from typing import Optional
 import os
 import logging
-from uuid import UUID, uuid4
+from uuid import uuid4
 from typing import Dict
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select, Session, func, or_
@@ -245,16 +245,15 @@ class RTIRequestService:
     ) -> RTIRequestResponse:
         """Fetches a single RTI Request by its ID."""
         try:
-            target_id = request_id
 
-            rti_request = self.session.get(RTIRequest, target_id)
+            rti_request = self.session.get(RTIRequest, request_id)
 
             if not rti_request:
                 raise NotFoundException(f"RTI Request with id {request_id} not found.")
 
             return RTIRequestResponse.model_validate(rti_request)
 
-        except (BadRequestException, NotFoundException):
+        except NotFoundException:
             raise
         except Exception as e:
             logger.error(f"[RTI SERVICE] Error reading RTI request: {e}")
@@ -414,13 +413,13 @@ class RTIRequestService:
     ) -> None:
         """Deletes an RTI Request and its associated history and files."""
         try:
-            target_id = request_id
-            rti_request = self.session.get(RTIRequest, target_id)
+
+            rti_request = self.session.get(RTIRequest, request_id)
             if not rti_request:
-                raise NotFoundException(f"RTI Request with id {target_id} not found.")
+                raise NotFoundException(f"RTI Request with id {request_id} not found.")
 
             # 1. Fetch all histories and their files
-            statement = select(RTIStatusHistory).where(RTIStatusHistory.rti_request_id == target_id)
+            statement = select(RTIStatusHistory).where(RTIStatusHistory.rti_request_id == request_id)
             histories = self.session.exec(statement).all()
             
             # If there are more than 1 history record, it means the request has progressed
@@ -455,7 +454,7 @@ class RTIRequestService:
                 except Exception as ex:
                     logger.error(f"[RTI SERVICE] Failed to delete orphaned file from GitHub: {file_path}. Error: {ex}")
 
-        except (BadRequestException, NotFoundException, ConflictException):
+        except (NotFoundException, ConflictException):
             raise
         except Exception as e:
             self.session.rollback()

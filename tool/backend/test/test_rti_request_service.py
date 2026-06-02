@@ -312,7 +312,7 @@ async def test_get_rti_request_by_id_not_found(rti_request_db, make_file_service
     service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
     
     with pytest.raises(NotFoundException) as exc:
-        service.get_rti_request_by_id(request_id=99999)
+        service.get_rti_request_by_id(request_id=999999)
     assert "not found" in str(exc.value)
 
 
@@ -325,7 +325,7 @@ async def test_get_rti_request_by_id_internal_error(rti_request_db, monkeypatch,
     monkeypatch.setattr(rti_request_db, "get", MagicMock(side_effect=Exception("DB breakdown")))
     
     with pytest.raises(InternalServerException) as exc:
-        service.get_rti_request_by_id(request_id=99999)
+        service.get_rti_request_by_id(request_id=999999)
     assert "Failed to read RTI request" in str(exc.value)
 
 # test get rti request
@@ -365,7 +365,7 @@ async def test_get_rti_requests_with_no_history(rti_request_db, make_file_servic
     receiver = rti_request_db.exec(select(Receiver)).first()
     
     # Manually create a request without using the service (to bypass history creation)
-    req_id = 99999
+    req_id = 999999
     req = RTIRequest(
         id=req_id,
         title="No History Request",
@@ -392,7 +392,7 @@ async def test_get_rti_requests_latest_status_only(rti_request_db, make_file_ser
     receiver = rti_request_db.exec(select(Receiver)).first()
     
     # 1. Create a request
-    req_id = 99999
+    req_id = 999999
     req = RTIRequest(
         id=req_id,
         title="Multiple History Request",
@@ -662,7 +662,7 @@ async def test_update_rti_request_invalid_content_type(rti_request_db, make_file
 async def test_update_rti_request_not_found(rti_request_db, make_file_service, make_rti_request_update_request):
     """NotFoundException raised when updating a non-existent RTI Request."""
     service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
-    update_request = make_rti_request_update_request(id=99999)
+    update_request = make_rti_request_update_request(id=999999)
     
     with pytest.raises(NotFoundException):
         await service.update_rti_request(request_data=update_request)
@@ -923,7 +923,7 @@ async def test_delete_rti_request_not_found(rti_request_db, make_file_service):
     service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
     
     with pytest.raises(NotFoundException):
-        await service.delete_rti_request(request_id=99999)
+        await service.delete_rti_request(request_id=999999)
 
 @pytest.mark.asyncio
 async def test_delete_rti_request_conflict_no_file_deletion(rti_request_db, monkeypatch, make_file_service, make_rti_request_request):

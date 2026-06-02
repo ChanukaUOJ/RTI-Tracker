@@ -4,7 +4,7 @@ import pytest
 import random
 from unittest.mock import MagicMock, AsyncMock
 from sqlalchemy.exc import OperationalError, IntegrityError
-from sqlmodel import select, Session, create_engine, SQLModel
+from sqlmodel import select, Session
 from datetime import datetime, timezone, timedelta
 
 from src.services.rti_request_history_service import RTIRequestHistoryService
@@ -77,6 +77,15 @@ async def test_get_rti_request_histories_success(rti_request_db, make_file_servi
     assert response.data[0].description == "History 2"
     assert response.data[1].description == "History 1"
     assert isinstance(response.data[0], RTIRequestHistoryResponse)
+
+@pytest.mark.asyncio
+async def test_get_rti_request_histories_not_found(rti_request_db, make_file_service):
+    """NotFoundException raised when RTI Request ID doesn't exist."""
+    service = RTIRequestHistoryService(session=rti_request_db, file_service=make_file_service())
+    
+    with pytest.raises(NotFoundException) as exc:
+        service.get_rti_request_histories_by_id(rti_request_id="999999999")
+    assert "not found" in str(exc.value)
 
 @pytest.mark.asyncio
 async def test_get_rti_request_histories_empty(rti_request_db, make_file_service):
@@ -160,7 +169,7 @@ async def test_create_rti_request_history_request_not_found(rti_request_db, make
     )
     
     with pytest.raises(NotFoundException) as exc:
-        await service.create_rti_request_history(rti_request_id=99999, request_data=request)
+        await service.create_rti_request_history(rti_request_id=999999, request_data=request)
     assert "RTI Request" in str(exc.value)
 
 @pytest.mark.asyncio
