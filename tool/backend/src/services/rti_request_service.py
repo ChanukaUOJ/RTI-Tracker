@@ -160,7 +160,8 @@ class RTIRequestService:
                 search_filters.append(
                     or_(
                         RTIRequest.title.icontains(query),
-                        RTIRequest.description.icontains(query)
+                        RTIRequest.description.icontains(query),
+                        RTIRequest.id == int(query) if query.isdigit() else False
                     )
                 )
 

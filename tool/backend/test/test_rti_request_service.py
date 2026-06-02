@@ -6,7 +6,6 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy import text
 from sqlmodel import SQLModel, Session, create_engine, select
 from datetime import datetime, timezone
-
 import src.utils.file_validation as file_validation
 from src.services.rti_request_service import RTIRequestService
 from src.utils.file_validation import FileValidationPolicy, FileValidationRules
@@ -486,6 +485,27 @@ async def test_get_rti_requests_search_by_title(rti_request_db, make_file_servic
     response = service.get_rti_requests(search_query="Sample1")
     assert len(response.data) == 1
     assert response.data[0].title == "Sample1 Report"
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_id(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific titles
+    req1 = await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample1 Report"
+    ))
+    req2 = await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample2 Report"
+    ))
+
+    # Search for the id of req2
+    response = service.get_rti_requests(search_query=str(req2.id))
+    assert len(response.data) == 1
+    assert response.data[0].id == req2.id
     assert response.pagination.total_items == 1
 
 @pytest.mark.asyncio
