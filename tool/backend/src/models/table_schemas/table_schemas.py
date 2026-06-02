@@ -89,9 +89,9 @@ class Receiver(SQLModel, table=True):
     id: UUID = Field(primary_key=True, description="Unique identifier for the receiver")
     position_id: UUID = Field(foreign_key="positions.id", description="ID of the position")
     institution_id: UUID = Field(foreign_key="institutions.id", description="ID of the institution")
-    emails: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSON), description="List of email of the receiver")
+    emails: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSON), description="List of emails of the receiver")
     address: Optional[str] = Field(None, description="Address of the receiver")
-    contact_nos: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSON), description="List of contact number of the receiver")
+    contact_nos: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSON), description="List of contact numbers of the receiver")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="ISO 8601 timestamp of when the receiver was created",
