@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS receivers (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     position_id uuid NOT NULL REFERENCES positions(id),
     institution_id uuid NOT NULL REFERENCES institutions(id),
-    email VARCHAR UNIQUE,
+    emails JSONB,
     address VARCHAR,
-    contact_no VARCHAR UNIQUE,
+    contact_nos JSONB,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -94,10 +94,11 @@ ADD CONSTRAINT check_senders_email_or_contact_no
 CHECK (email IS NOT NULL OR contact_no IS NOT NULL);
 
 -- RECEIVERS TABLE 
-ALTER TABLE receivers DROP CONSTRAINT IF EXISTS check_receivers_email_or_contact_no;
+ALTER TABLE receivers DROP CONSTRAINT IF EXISTS check_receivers_emails_or_contact_nos;
 ALTER TABLE receivers 
-ADD CONSTRAINT check_receivers_email_or_contact_no
-CHECK (email IS NOT NULL OR contact_no IS NOT NULL);
+ADD CONSTRAINT check_receivers_emails_or_contact_nos
+CHECK ((emails IS NOT NULL AND emails <> '[]'::jsonb) OR 
+(contact_nos IS NOT NULL AND contact_nos <> '[]'::jsonb));
 
 -- Foreign Key Indexes 
 -- RECEIVERS TABLE

@@ -13,7 +13,6 @@ import { TabButton } from '../components/TabButton';
 import { FormLabel } from '../components/FormLabel';
 import { FieldError } from '../components/FieldError';
 
-
 import { receiversService } from '../services/receiversService';
 import { institutionService } from '../services/institutionService';
 import { positionService } from '../services/positionService';
@@ -22,24 +21,46 @@ import { useEntityData } from '../hooks/useEntityData';
 import { Column } from '../types/table';
 import { useDebounce } from '../hooks/useDebounce';
 
+import { Regx } from "../consts/regx";
+import TagInput from '../components/TagInput';
+
 type TabKey = 'receivers' | 'institutions' | 'positions';
 
-// Validation Schemas 
+// define required regex
+const EMAIL_RE = Regx.EMAIL;
+const PHONE_RE = Regx.PHONE;
 
+// receiver validation schema
 const receiverSchema = yup.object().shape({
   institutionId: yup.string().required('Institution is required'),
   positionId: yup.string().required('Position is required'),
-  email: yup.string().trim().nullable().transform(v => v === '' ? null : v)
-    .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address'),
-  contactNo: yup.string().trim().nullable().transform(v => v === '' ? null : v)
-    .test('is-sl-phone', 'Please enter a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567)', value => {
-      if (!value) return true;
-      return /^(?:\+94|0)[1-9][0-9]{8}$/.test(value);
-    }),
-  address: yup.string().nullable().transform(v => v === '' ? null : v),
+  emails: yup
+    .array()
+    .of(
+      yup
+        .string()
+        .required()
+        .matches(EMAIL_RE, 'Please enter a valid email address')
+    )
+    .nullable(),
+  contactNos: yup
+    .array()
+    .of(
+      yup
+        .string()
+        .required()
+        .test('is-sl-phone', 'Please enter a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567)', v => {
+          if (!v) return true;
+          return PHONE_RE.test(v);
+        })
+    )
+    .nullable(),
+  address: yup.string().nullable().transform(v => (v === '' ? null : v)),
 }).test('contact-required', 'Either Email or Contact No is required', function (value) {
-  if (!value.email && !value.contactNo) {
-    return this.createError({ path: 'email', message: 'Email or Contact No is required' });
+  const hasEmails = Array.isArray(value.emails) && value.emails.length > 0;
+  const hasContactNos = Array.isArray(value.contactNos) && value.contactNos.length > 0;
+  if (!hasEmails && !hasContactNos) {
+    return this.createError({ path: 'emails', message: 'At least one Email or Contact No is required' });
   }
   return true;
 });
@@ -47,6 +68,7 @@ const receiverSchema = yup.object().shape({
 const nameEntitySchema = yup.object({
   name: yup.string().required('Name is required').trim(),
 });
+
 
 export function Receivers() {
   const [tab, setTab] = useState<TabKey>('receivers');
@@ -125,10 +147,14 @@ export function Receivers() {
     reset: resetReceiverForm,
     setValue: setReceiverValue,
     formState: { errors: receiverErrors }
-  } = useForm({
+  } = useForm<ReceiverFormValues>({
     resolver: yupResolver(receiverSchema),
     defaultValues: {
-      institutionId: '', positionId: '', email: '', contactNo: '', address: ''
+      institutionId: '',
+      positionId: '',
+      emails: [] as string[],
+      contactNos: [] as string[],
+      address: ''
     }
   });
 
@@ -153,8 +179,26 @@ export function Receivers() {
   const receiverColumns: Column<Receiver>[] = useMemo(() => [
     { header: 'Institution', cell: (r) => r.institution?.name || '-', className: 'font-medium text-gray-900' },
     { header: 'Position', cell: (r) => r.position?.name || '-', className: 'text-gray-700' },
-    { header: 'Email', accessor: 'email', className: 'text-gray-600' },
-    { header: 'Contact No', accessor: 'contactNo', className: 'text-gray-600' },
+    {
+      header: 'Emails',
+      cell: (r) => r.emails?.length
+        ? <div className="flex flex-wrap gap-1">
+          {r.emails.map((e, i) => (
+            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">{e}</span>
+          ))}
+        </div>
+        : '-',
+    },
+    {
+      header: 'Contact Nos',
+      cell: (r) => r.contactNos?.length
+        ? <div className="flex flex-wrap gap-1">
+          {r.contactNos.map((n, i) => (
+            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">{n}</span>
+          ))}
+        </div>
+        : '-',
+    },
     { header: 'Address', accessor: 'address', className: 'text-gray-600' },
   ], []);
 
@@ -176,20 +220,27 @@ export function Receivers() {
     resetReceiverForm({
       institutionId: r?.institution?.id || '',
       positionId: r?.position?.id || '',
-      email: r?.email || '',
-      contactNo: r?.contactNo || '',
+      emails: r?.emails || [],
+      contactNos: r?.contactNos || [],
       address: r?.address || ''
     });
     setReceiverModalOpen(true);
   };
 
-  const onSaveReceiver = async (data: { institutionId?: string, positionId?: string, email?: string | null, contactNo?: string | null, address?: string | null }) => {
+  const onSaveReceiver = async (data: ReceiverFormValues) => {
     try {
+      const payload = {
+        institutionId: data.institutionId,
+        positionId: data.positionId,
+        emails: data.emails ?? [],
+        contactNos: data.contactNos?.map(n => n.replace(/-/g, '')) ?? [],
+        address: data.address ?? null,
+      };
       if (receiverEdit) {
-        await receiversHook.confirmUpdate(receiverEdit.id, data);
+        await receiversHook.confirmUpdate(receiverEdit.id, payload);
         toast.success('Receiver updated');
       } else {
-        await receiversHook.confirmCreate(data);
+        await receiversHook.confirmCreate(payload);
         toast.success('Receiver created');
       }
       setReceiverModalOpen(false);
@@ -300,8 +351,6 @@ export function Receivers() {
             loading={(tab === 'institutions' ? (institutionsHook.isLoading || institutionsHook.isFetching) : (positionsHook.isLoading || positionsHook.isFetching)) || isAnyMutating}
             onPageChange={p => updateParams(tab, { page: p })}
             onPageSizeChange={s => updateParams(tab, { pageSize: s, page: 1 })}
-            // searchTerm={params[tab].search}
-            // onSearch={s => updateParams(tab, { search: s, page: 1 })}
             columns={simpleEntityColumns}
             onEdit={item => openNameModal(tab === 'institutions' ? 'institution' : 'position', item)}
             onDelete={(item: Institution | Position) => setDeleteConfirm({ id: item.id, type: tab })}
@@ -368,46 +417,51 @@ export function Receivers() {
             />
             <FieldError error={receiverErrors.positionId?.message} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <FormLabel label="Email" />
+
+          {/* Emails — full width */}
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <FormLabel label="Emails" />
+            <p className="text-xs text-gray-400 -mt-1">Type an email and press <kbd className="px-1 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">Enter</kbd> or <kbd className="px-1 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">,</kbd> to add. Paste comma-separated emails to add multiple at once.</p>
             <Controller
-              name="email"
+              name="emails"
               control={receiverControl}
               render={({ field }) => (
-                <input
-                  type="email"
-                  autoComplete="off"
-                  className={`px-3 py-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-900 ${receiverErrors.email ? 'border-red-500' : ''}`}
-                  {...field}
-                  value={field.value || ''}
+                <TagInput
+                  tags={(field.value as string[]) || []}
+                  onChange={field.onChange}
+                  validator={v => EMAIL_RE.test(v)}
+                  validationMessage="Please enter a valid email address"
                   placeholder="receiver@example.com"
+                  hasError={!!receiverErrors.emails}
+                  type="email"
                 />
               )}
             />
-            <FieldError error={receiverErrors.email?.message} />
+            <FieldError error={receiverErrors.emails?.message as string} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <FormLabel label="Contact No" />
+
+          {/* Contact Nos — full width */}
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <FormLabel label="Contact Numbers" />
+            <p className="text-xs text-gray-400 -mt-1">Type a number and press <kbd className="px-1 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">Enter</kbd> or <kbd className="px-1 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">,</kbd> to add.</p>
             <Controller
-              name="contactNo"
+              name="contactNos"
               control={receiverControl}
               render={({ field }) => (
-                <input
-                  autoComplete="off"
-                  className={`px-3 py-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-900 ${receiverErrors.contactNo ? 'border-red-500' : ''}`}
-                  {...field}
-                  value={field.value || ''}
-                  onChange={e => {
-                    const val = e.target.value.replace(/[^0-9+]/g, '');
-                    const sanitized = val.replace(/(?!^)\+/g, '');
-                    field.onChange(sanitized);
-                  }}
+                <TagInput
+                  tags={(field.value as string[]) || []}
+                  onChange={field.onChange}
+                  validator={v => PHONE_RE.test(v)}
+                  validationMessage="Please enter a valid Sri Lankan phone number (e.g. 0771234567 or +94771234567)"
                   placeholder="0xxxxxxxx or +94xxxxxxxxx"
+                  hasError={!!receiverErrors.contactNos}
+                  type="tel"
                 />
               )}
             />
-            <FieldError error={receiverErrors.contactNo?.message} />
+            <FieldError error={receiverErrors.contactNos?.message as string} />
           </div>
+
           <div className="flex flex-col gap-1.5 md:col-span-2">
             <FormLabel label="Address" />
             <Controller

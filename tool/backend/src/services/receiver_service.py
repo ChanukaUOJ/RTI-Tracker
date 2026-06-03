@@ -25,9 +25,9 @@ class ReceiverService:
                 id=uuid4(),
                 position_id=receiver_request.position_id,
                 institution_id=receiver_request.institution_id,
-                email=receiver_request.email,
+                emails=receiver_request.emails,
                 address=receiver_request.address,
-                contact_no=receiver_request.contact_no
+                contact_nos=receiver_request.contact_nos
             )
             self.session.add(receiver)
             self.session.commit()
@@ -37,10 +37,6 @@ class ReceiverService:
         except IntegrityError as e:
             self.session.rollback()
             error_msg = str(e.orig)
-            if "receivers_email_key" in error_msg or "receivers.email" in error_msg:
-                raise ConflictException("Email already exists for another receiver.")
-            if "receivers_contact_no_key" in error_msg or "receivers.contact_no" in error_msg:
-                raise ConflictException("Contact number already exists for another receiver.")
             
             # Clean up the DB error message to return it directly
             clean_error = error_msg.replace('\n', ' ').strip()
@@ -148,10 +144,6 @@ class ReceiverService:
         except IntegrityError as e:
             self.session.rollback()
             error_msg = str(e.orig)
-            if "receivers_email_key" in error_msg or "receivers.email" in error_msg:
-                raise ConflictException("Email already exists for another receiver.")
-            if "receivers_contact_no_key" in error_msg or "receivers.contact_no" in error_msg:
-                raise ConflictException("Contact number already exists for another receiver.")
             
             # Clean up the DB error message to return it directly
             clean_error = error_msg.replace('\n', ' ').strip()

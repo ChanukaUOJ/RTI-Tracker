@@ -5,8 +5,7 @@ from aiohttp import ClientError
 from datetime import datetime, timezone, timedelta
 from sqlmodel import SQLModel, Session, create_engine
 from src.models import RTITemplate, Institution, Position, Receiver, ReceiverRequest, ReceiverUpdateRequest, RTIRequest, RTIStatus, RTIStatusHistory, RTIStatusName
-from src.models.request_models import RTITemplateRequest, PositionRequest
-from src.services.github_file_service import GithubFileService
+from src.models.request_models import RTITemplateRequest, PositionRequest, RTIStatusRequest
 from fastapi import UploadFile
 from sqlalchemy import event
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
@@ -315,7 +314,7 @@ def receiver_db():
             id=uuid.uuid4(),
             position=pos1,
             institution=inst1,
-            email="receiver1@example.com",
+            emails=["receiver1@example.com"],
             created_at=now - timedelta(hours=2),
             updated_at=now - timedelta(hours=2),
         ),
@@ -323,7 +322,7 @@ def receiver_db():
             id=uuid.uuid4(),
             position=pos1,
             institution=inst1,
-            email="receiver2@example.com",
+            emails=["receiver2@example.com"],
             created_at=now - timedelta(hours=1),
             updated_at=now - timedelta(hours=1),
         ),
@@ -331,13 +330,13 @@ def receiver_db():
             id=uuid.uuid4(),
             position=pos1,
             institution=inst1,
-            email="receiver3@example.com",
+            emails=["receiver3@example.com"],
             created_at=now,
             updated_at=now,
         ),
-        Receiver(id=uuid.uuid4(), position=pos_legal,    institution=inst_health,  email="r1@example.com", created_at=now - timedelta(hours=2), updated_at=now - timedelta(hours=2)),
-        Receiver(id=uuid.uuid4(), position=pos_director, institution=inst_finance, email="r2@example.com", created_at=now - timedelta(hours=1), updated_at=now - timedelta(hours=1)),
-        Receiver(id=uuid.uuid4(), position=pos_admin,    institution=inst_police,  email="r3@example.com", created_at=now,                     updated_at=now),
+        Receiver(id=uuid.uuid4(), position=pos_legal,    institution=inst_health,  emails=["r1@example.com"], created_at=now - timedelta(hours=2), updated_at=now - timedelta(hours=2)),
+        Receiver(id=uuid.uuid4(), position=pos_director, institution=inst_finance, emails=["r2@example.com"], created_at=now - timedelta(hours=1), updated_at=now - timedelta(hours=1)),
+        Receiver(id=uuid.uuid4(), position=pos_admin,    institution=inst_police,  emails=["r3@example.com"], created_at=now,                     updated_at=now),
     ]
     
     with Session(engine) as session:
@@ -355,16 +354,16 @@ def make_receiver_request():
     def _factory(
         position_id: uuid.UUID,
         institution_id: uuid.UUID,
-        email: str | None = "new@example.com",
+        emails: list[str] | None = None,
         address: str | None = "New Address",
-        contact_no: str | None = "0771234568",
+        contact_nos: list[str] | None = None,
     ) -> ReceiverRequest:
         return ReceiverRequest(
             positionId=position_id,
             institutionId=institution_id,
-            email=email,
+            emails=emails if emails is not None else ["new@example.com"],
             address=address,
-            contactNo=contact_no
+            contactNos=contact_nos if contact_nos is not None else ["0771234568"],
         )
 
     return _factory
@@ -376,18 +375,17 @@ def make_receiver_update_request():
     def _factory(
         position_id: uuid.UUID | None = None,
         institution_id: uuid.UUID | None = None,
-        email: str | None = None,
+        emails: list[str] | None = None,
         address: str | None = None,
-        contact_no: str | None = None,
+        contact_nos: list[str] | None = None,
     ) -> ReceiverUpdateRequest:
         # Use dict and then parse to handle exclude_unset=True in model_dump
         data = {}
         if position_id is not None: data["positionId"] = position_id
         if institution_id is not None: data["institutionId"] = institution_id
-        if email is not None: data["email"] = email
+        if emails is not None: data["emails"] = emails
         if address is not None: data["address"] = address
-        if contact_no is not None: data["contactNo"] = contact_no
-        
+        if contact_nos is not None: data["contactNos"] = contact_nos
         return ReceiverUpdateRequest(**data)
 
     return _factory
@@ -494,7 +492,6 @@ def mock_sender_service():
 @pytest.fixture
 def make_rti_status_request():
     """Factory for StatusRequest instances."""
-    from src.models.request_models import RTIStatusRequest
 
     def _factory(name: str = "Dispatched") -> RTIStatusRequest:
         return RTIStatusRequest(name=name)
@@ -567,7 +564,7 @@ def rti_request_db():
         id=uuid.uuid4(),
         position_id=pos.id,
         institution_id=inst.id,
-        email="receiver@example.com",
+        emails=["receiver@example.com"],
         created_at=now,
         updated_at=now
     )

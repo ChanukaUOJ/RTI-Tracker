@@ -32,9 +32,9 @@ export const getVariableValues = (
     s_contactNo: sender?.contactNo || '',
     r_inst: receiver?.institution?.name || '',
     r_pos: receiver?.position?.name || '',
-    r_email: receiver?.email || '',
+    r_email: receiver?.emails?.join(', ') || '',
     r_address: receiver?.address || '',
-    r_contactNo: receiver?.contactNo || '',
+    r_contactNo: receiver?.contactNos?.join(', ') || '',
   };
 
   const mapping: Record<string, string> = {};
