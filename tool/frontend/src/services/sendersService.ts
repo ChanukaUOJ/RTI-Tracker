@@ -9,6 +9,7 @@ export const sendersService = {
    * list senders
    */
   async listSenders(page: number, pageSize: number, httpClient?: any) {
+    // TODO: implement search functionality (DO NOT delete search)
     if (!httpClient) throw new Error('Asgardeo HTTP client is required');
 
     try {
