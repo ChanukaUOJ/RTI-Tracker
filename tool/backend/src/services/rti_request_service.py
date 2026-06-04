@@ -4,7 +4,8 @@ import logging
 from uuid import uuid4
 from typing import Dict
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select, Session, func, or_
+from sqlmodel import select, Session, func, or_, cast
+from sqlalchemy import String
 from sqlalchemy.orm import joinedload
 from src.models import PaginationModel
 from src.services.github_file_service import GithubFileService
@@ -161,7 +162,7 @@ class RTIRequestService:
                     or_(
                         RTIRequest.title.icontains(query),
                         RTIRequest.description.icontains(query),
-                        RTIRequest.id == int(query) if query.isdigit() else False
+                        cast(RTIRequest.id, String).icontains(query) if query.isdigit() else False
                     )
                 )
 

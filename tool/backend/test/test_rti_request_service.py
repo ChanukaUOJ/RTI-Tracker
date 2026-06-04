@@ -10,7 +10,7 @@ import src.utils.file_validation as file_validation
 from src.services.rti_request_service import RTIRequestService
 from src.utils.file_validation import FileValidationPolicy, FileValidationRules
 from src.models.table_schemas.table_schemas import (
-    RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection, 
+    RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection,
     Sender, Receiver
 )
 from src.models.response_models.rti_requests import RTIRequestResponse, RTIRequestListResponse, RTIRequestExpandedResponse
@@ -507,6 +507,36 @@ async def test_get_rti_requests_search_by_id(rti_request_db, make_file_service, 
     assert len(response.data) == 1
     assert response.data[0].id == req2.id
     assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_id_partial(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+    
+    # Create requests directly in the DB to bypass service logic (which creates history records that lock the ID)
+    req1 = RTIRequest(
+        id=100001,
+        title="Sample1 Report",
+        sender_id=sender.id,
+        receiver_id=receiver.id
+    )
+    req2 = RTIRequest(
+        id=100002,
+        title="Sample2 Report",
+        sender_id=sender.id,
+        receiver_id=receiver.id
+    )
+
+    rti_request_db.add(req1)
+    rti_request_db.add(req2)
+    rti_request_db.commit()
+
+    # Search for the partial id of req2 ("100")
+    response = service.get_rti_requests(search_query="1000")
+    assert len(response.data) == 2
+    assert response.pagination.total_items == 2
 
 @pytest.mark.asyncio
 async def test_get_rti_requests_search_by_partial_title(rti_request_db, make_file_service, make_rti_request_request):
