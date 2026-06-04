@@ -1,9 +1,10 @@
 # test/test_rti_request_history_service.py
 import uuid
 import pytest
+import random
 from unittest.mock import MagicMock, AsyncMock
 from sqlalchemy.exc import OperationalError, IntegrityError
-from sqlmodel import select, Session, create_engine, SQLModel
+from sqlmodel import select, Session
 from datetime import datetime, timezone, timedelta
 
 from src.services.rti_request_history_service import RTIRequestHistoryService
@@ -25,8 +26,9 @@ def create_test_rti_request(session: Session):
     """Helper to seed an RTIRequest since rti_request_db fixture doesn't seed one."""
     sender = session.exec(select(Sender)).first()
     receiver = session.exec(select(Receiver)).first()
+
     rti_request = RTIRequest(
-        id=uuid.uuid4(),
+        id=random.randint(100000, 999999),
         title="Test RTI Request",
         sender_id=sender.id,
         receiver_id=receiver.id,
@@ -82,17 +84,8 @@ async def test_get_rti_request_histories_not_found(rti_request_db, make_file_ser
     service = RTIRequestHistoryService(session=rti_request_db, file_service=make_file_service())
     
     with pytest.raises(NotFoundException) as exc:
-        service.get_rti_request_histories_by_id(rti_request_id=uuid.uuid4())
+        service.get_rti_request_histories_by_id(rti_request_id="999999999")
     assert "not found" in str(exc.value)
-
-@pytest.mark.asyncio
-async def test_get_rti_request_histories_invalid_uuid(rti_request_db, make_file_service):
-    """BadRequestException raised for invalid UUID format."""
-    service = RTIRequestHistoryService(session=rti_request_db, file_service=make_file_service())
-    
-    with pytest.raises(BadRequestException) as exc:
-        service.get_rti_request_histories_by_id(rti_request_id="not-a-uuid")
-    assert "Invalid UUID format" in str(exc.value)
 
 @pytest.mark.asyncio
 async def test_get_rti_request_histories_empty(rti_request_db, make_file_service):
@@ -176,7 +169,7 @@ async def test_create_rti_request_history_request_not_found(rti_request_db, make
     )
     
     with pytest.raises(NotFoundException) as exc:
-        await service.create_rti_request_history(rti_request_id=uuid.uuid4(), request_data=request)
+        await service.create_rti_request_history(rti_request_id=999999, request_data=request)
     assert "RTI Request" in str(exc.value)
 
 @pytest.mark.asyncio

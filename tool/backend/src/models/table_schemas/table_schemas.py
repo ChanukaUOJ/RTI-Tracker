@@ -139,7 +139,7 @@ class RTIRequest(SQLModel, table=True):
     __tablename__ = "rti_requests"
 
     # table fields
-    id: UUID = Field(primary_key=True, description="Unique identifier for the rti request")
+    id: Optional[int] = Field(default=None, primary_key=True, description="Unique identifier for the rti request")
     title: str = Field(description="title of the rti request")
     description: Optional[str] = Field(default=None, description="description of the rti request")
     sender_id: UUID = Field(foreign_key="senders.id", description="ID of the sender")
@@ -186,7 +186,7 @@ class RTIStatusHistory(SQLModel, table=True):
 
     # table fields
     id: UUID = Field(primary_key=True, description="Unique identifier for the RTI Status History")
-    rti_request_id: UUID = Field(foreign_key="rti_requests.id", description="Unique identifier for the RTI Request")
+    rti_request_id: int = Field(foreign_key="rti_requests.id", description="Unique identifier for the RTI Request")
     status_id: UUID = Field(foreign_key="rti_statuses.id", description="Unique identifier for the RTI Status")
     direction: RTIDirection = Field(sa_column=Column(SAEnum(RTIDirection, name="rti_direction")), description="direction for the RTI Status History")
     description: Optional[str] = Field(default=None, description="description for the RTI Status History")

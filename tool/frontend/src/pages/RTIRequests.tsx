@@ -186,6 +186,7 @@ export function RTIRequests() {
   };
 
   const columns: Column<RTIRequest>[] = [
+    { header: 'ID', accessor: 'id', className: 'font-medium text-gray-900' },
     { header: 'Title', accessor: 'title', className: 'font-medium text-gray-900' },
     {
       header: 'Receiver',

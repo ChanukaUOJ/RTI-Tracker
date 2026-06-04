@@ -92,7 +92,7 @@ export const mockSenders: Sender[] = [
 
 export const mockRTIRequests: any[] = [
   {
-    id: 'e1111111-1111-1111-1111-111111111111',
+    id: 100001,
     referenceId: 'RTI/2024/001',
     title: 'Pollution data for Kelani River',
     description: 'Requesting daily water quality test results for the last 6 months.',
@@ -107,7 +107,7 @@ export const mockRTIRequests: any[] = [
 export const mockStatusHistories: any[] = [
   {
     id: 'f1111111-1111-1111-1111-111111111111',
-    rtiRequestId: 'e1111111-1111-1111-1111-111111111111',
+    rtiRequestId: 100001,
     statusId: '01111111-1111-1111-1111-111111111111',
     direction: 'sent',
     description: 'Initial RTI Request created.',

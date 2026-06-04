@@ -30,7 +30,7 @@ async def get_rti_requests_endpoint(
 
 @router.get("/rti_requests/{id}", response_model=RTIRequestResponse)
 def get_rti_request_by_id_endpoint(
-    id: Annotated[UUID, Path(title="ID of the RTI Request")],
+    id: Annotated[int, Path(title="ID of the RTI Request")],
     service: RTIRequestService = Depends(get_rti_request_service),
     user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER]))
 ):
@@ -62,7 +62,7 @@ async def create_rti_request_endpoint(
 
 @router.put("/rti_requests/{id}", response_model=RTIRequestResponse)
 async def update_rti_request_endpoint(
-    id: Annotated[UUID, Path(title="ID of the RTI Request")],
+    id: Annotated[int, Path(title="ID of the RTI Request")],
     title: Annotated[Optional[str], Form(description="Title of the RTI Request")] = None,
     sender_id: Annotated[Optional[UUID], Form(alias="senderId", description="ID of the sender")] = None,
     receiver_id: Annotated[Optional[UUID], Form(alias="receiverId", description="ID of the receiver")] = None,
@@ -86,7 +86,7 @@ async def update_rti_request_endpoint(
 
 @router.delete("/rti_requests/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_rti_request_endpoint(
-    id: Annotated[UUID, Path(title="ID of the RTI Request")],
+    id: Annotated[int, Path(title="ID of the RTI Request")],
     service: RTIRequestService = Depends(get_rti_request_service),
     user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER]))
 ):

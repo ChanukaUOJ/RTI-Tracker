@@ -43,18 +43,13 @@ class RTIRequestHistoryService:
     def get_rti_request_histories_by_id(
         self,
         *,
-        rti_request_id: UUID,
+        rti_request_id: int,
         page: int = 1,
         page_size: int = 10,
     ) -> RTIRequestHistoryListResponse:
         try:
             # Validate that the parent RTI Request exists
-            try:
-                target_id = UUID(str(rti_request_id))
-            except ValueError:
-                raise BadRequestException(f"Invalid UUID format: {rti_request_id}")
-
-            rti_request = self.session.get(RTIRequest, target_id)
+            rti_request = self.session.get(RTIRequest, rti_request_id)
             if not rti_request:
                 raise NotFoundException(f"RTI Request with id {rti_request_id} not found.")
 
@@ -63,7 +58,7 @@ class RTIRequestHistoryService:
             # Fetch paginated history records ordered by created_at descending
             statement_records = (
                 select(RTIStatusHistory)
-                .where(RTIStatusHistory.rti_request_id == target_id)
+                .where(RTIStatusHistory.rti_request_id == rti_request_id)
                 .options(selectinload(RTIStatusHistory.rti_status))
                 .order_by(RTIStatusHistory.created_at.desc())
                 .offset(offset)
@@ -75,7 +70,7 @@ class RTIRequestHistoryService:
             statement_count = (
                 select(func.count())
                 .select_from(RTIStatusHistory)
-                .where(RTIStatusHistory.rti_request_id == target_id)
+                .where(RTIStatusHistory.rti_request_id == rti_request_id)
             )
             total_items = self.session.exec(statement_count).one()
 
@@ -103,7 +98,7 @@ class RTIRequestHistoryService:
     async def create_rti_request_history(
         self,
         *,
-        rti_request_id: UUID,
+        rti_request_id: int,
         request_data: RTIRequestHistoryRequest
     ) -> RTIRequestHistoryResponse:
 
@@ -196,7 +191,7 @@ class RTIRequestHistoryService:
     async def update_rti_request_history(
         self,
         *,
-        rti_request_id: UUID,
+        rti_request_id: int,
         request_data: RTIRequestHistoryUpdateRequest
     ) -> RTIRequestHistoryResponse:
         """Updates an existing RTI Status History record."""
@@ -309,7 +304,7 @@ class RTIRequestHistoryService:
     async def delete_rti_request_history(
         self,
         *,
-        rti_request_id: UUID,
+        rti_request_id: int,
         history_id: UUID
     ) -> None:
         """Deletes an RTI Status History record and its associated files."""

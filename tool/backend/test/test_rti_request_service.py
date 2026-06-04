@@ -6,12 +6,11 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy import text
 from sqlmodel import SQLModel, Session, create_engine, select
 from datetime import datetime, timezone
-
 import src.utils.file_validation as file_validation
 from src.services.rti_request_service import RTIRequestService
 from src.utils.file_validation import FileValidationPolicy, FileValidationRules
 from src.models.table_schemas.table_schemas import (
-    RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection, 
+    RTIRequest, RTIStatus, RTIStatusHistory, RTIDirection,
     Sender, Receiver
 )
 from src.models.response_models.rti_requests import RTIRequestResponse, RTIRequestListResponse, RTIRequestExpandedResponse
@@ -312,17 +311,9 @@ async def test_get_rti_request_by_id_not_found(rti_request_db, make_file_service
     service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
     
     with pytest.raises(NotFoundException) as exc:
-        service.get_rti_request_by_id(request_id=uuid.uuid4())
+        service.get_rti_request_by_id(request_id=999999)
     assert "not found" in str(exc.value)
 
-@pytest.mark.asyncio
-async def test_get_rti_request_by_id_invalid_uuid(rti_request_db, make_file_service):
-    """BadRequestException raised for invalid UUID strings."""
-    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
-    
-    with pytest.raises(BadRequestException) as exc:
-        service.get_rti_request_by_id(request_id="invalid-uuid")
-    assert "Invalid UUID format" in str(exc.value)
 
 @pytest.mark.asyncio
 async def test_get_rti_request_by_id_internal_error(rti_request_db, monkeypatch, make_file_service):
@@ -333,7 +324,7 @@ async def test_get_rti_request_by_id_internal_error(rti_request_db, monkeypatch,
     monkeypatch.setattr(rti_request_db, "get", MagicMock(side_effect=Exception("DB breakdown")))
     
     with pytest.raises(InternalServerException) as exc:
-        service.get_rti_request_by_id(request_id=uuid.uuid4())
+        service.get_rti_request_by_id(request_id=999999)
     assert "Failed to read RTI request" in str(exc.value)
 
 # test get rti request
@@ -373,7 +364,7 @@ async def test_get_rti_requests_with_no_history(rti_request_db, make_file_servic
     receiver = rti_request_db.exec(select(Receiver)).first()
     
     # Manually create a request without using the service (to bypass history creation)
-    req_id = uuid.uuid4()
+    req_id = 999999
     req = RTIRequest(
         id=req_id,
         title="No History Request",
@@ -400,7 +391,7 @@ async def test_get_rti_requests_latest_status_only(rti_request_db, make_file_ser
     receiver = rti_request_db.exec(select(Receiver)).first()
     
     # 1. Create a request
-    req_id = uuid.uuid4()
+    req_id = 999999
     req = RTIRequest(
         id=req_id,
         title="Multiple History Request",
@@ -495,6 +486,57 @@ async def test_get_rti_requests_search_by_title(rti_request_db, make_file_servic
     assert len(response.data) == 1
     assert response.data[0].title == "Sample1 Report"
     assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_id(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+
+    # Create requests with specific titles
+    req1 = await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample1 Report"
+    ))
+    req2 = await service.create_rti_request(request_data=make_rti_request_request(
+        sender_id=sender.id, receiver_id=receiver.id, title="Sample2 Report"
+    ))
+
+    # Search for the id of req2
+    response = service.get_rti_requests(search_query=str(req2.id))
+    assert len(response.data) == 1
+    assert response.data[0].id == req2.id
+    assert response.pagination.total_items == 1
+
+@pytest.mark.asyncio
+async def test_get_rti_requests_search_by_id_partial(rti_request_db, make_file_service, make_rti_request_request):
+    """Verifies that RTI Requests can be filtered by title."""
+    sender = rti_request_db.exec(select(Sender)).first()
+    receiver = rti_request_db.exec(select(Receiver)).first()
+    service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
+    
+    # Create requests directly in the DB to bypass service logic (which creates history records that lock the ID)
+    req1 = RTIRequest(
+        id=100001,
+        title="Sample1 Report",
+        sender_id=sender.id,
+        receiver_id=receiver.id
+    )
+    req2 = RTIRequest(
+        id=100002,
+        title="Sample2 Report",
+        sender_id=sender.id,
+        receiver_id=receiver.id
+    )
+
+    rti_request_db.add(req1)
+    rti_request_db.add(req2)
+    rti_request_db.commit()
+
+    # Search for the partial id of req2 ("100")
+    response = service.get_rti_requests(search_query="1000")
+    assert len(response.data) == 2
+    assert response.pagination.total_items == 2
 
 @pytest.mark.asyncio
 async def test_get_rti_requests_search_by_partial_title(rti_request_db, make_file_service, make_rti_request_request):
@@ -670,7 +712,7 @@ async def test_update_rti_request_invalid_content_type(rti_request_db, make_file
 async def test_update_rti_request_not_found(rti_request_db, make_file_service, make_rti_request_update_request):
     """NotFoundException raised when updating a non-existent RTI Request."""
     service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
-    update_request = make_rti_request_update_request(id=uuid.uuid4())
+    update_request = make_rti_request_update_request(id=999999)
     
     with pytest.raises(NotFoundException):
         await service.update_rti_request(request_data=update_request)
@@ -931,7 +973,7 @@ async def test_delete_rti_request_not_found(rti_request_db, make_file_service):
     service = RTIRequestService(session=rti_request_db, file_service=make_file_service())
     
     with pytest.raises(NotFoundException):
-        await service.delete_rti_request(request_id=uuid.uuid4())
+        await service.delete_rti_request(request_id=999999)
 
 @pytest.mark.asyncio
 async def test_delete_rti_request_conflict_no_file_deletion(rti_request_db, monkeypatch, make_file_service, make_rti_request_request):

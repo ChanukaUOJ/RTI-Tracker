@@ -615,7 +615,7 @@ def make_rti_request_request():
 def make_rti_request_update_request():
     """Returns a factory for mock RTIRequestUpdateRequest instances."""
     def _factory(
-        id: str = None,
+        id: int = None,
         title: str = None,
         description: str = None,
         sender_id: uuid.UUID = None,
@@ -625,7 +625,7 @@ def make_rti_request_update_request():
         content_type: str = "application/pdf"
     ):
         request = RTIRequestUpdateRequest(
-            id=id or str(uuid.uuid4()),
+            id=id or 999999,
             title=title,
             description=description,
             sender_id=sender_id,
@@ -648,7 +648,7 @@ def make_rti_request_update_request():
         # Re-initialize with only the provided fields to ensure exclude_unset works
         request = RTIRequestUpdateRequest(**fields)
         if not id:
-            request.id = str(uuid.uuid4()) # Ensure ID is always set for service fetch
+            request.id = 999999 # Ensure ID is always set for service fetch
 
         if filename:
             mock_file = AsyncMock(spec=UploadFile)

@@ -9,7 +9,7 @@ export const rtiRequestHistoryService = {
   /**
    * Fetches the history of an RTI request with pagination.
    */
-  async getHistories(rtiRequestId: string, page: number = 1, pageSize: number = 100, httpClient?: AsgardeoContextProps['http']): Promise<ListResponse<RTIStatusHistory>> {
+  async getHistories(rtiRequestId: number, page: number = 1, pageSize: number = 100, httpClient?: AsgardeoContextProps['http']): Promise<ListResponse<RTIStatusHistory>> {
     if (httpClient) {
       const response = await httpClient.request({
         url: `${BASE_URL}/api/v1/rti_requests/${rtiRequestId}/histories`,
@@ -24,7 +24,7 @@ export const rtiRequestHistoryService = {
   /**
    * Creates a new history entry for an RTI request.
    */
-  async createHistory(rtiRequestId: string, payload: {
+  async createHistory(rtiRequestId: number, payload: {
     statusId: string;
     direction: 'sent' | 'received';
     entryTime?: Date | string;
@@ -66,7 +66,7 @@ export const rtiRequestHistoryService = {
   /**
    * Updates an existing history entry.
    */
-  async updateHistory(rtiRequestId: string, historyId: string, payload: {
+  async updateHistory(rtiRequestId: number, historyId: string, payload: {
     statusId?: string;
     direction?: 'sent' | 'received';
     entryTime?: Date | string;
@@ -115,7 +115,7 @@ export const rtiRequestHistoryService = {
   /**
    * Deletes a history entry.
    */
-  async deleteHistory(rtiRequestId: string, historyId: string, httpClient?: AsgardeoContextProps['http']): Promise<void> {
+  async deleteHistory(rtiRequestId: number, historyId: string, httpClient?: AsgardeoContextProps['http']): Promise<void> {
     if (httpClient) {
       await httpClient.request({
         url: `${BASE_URL}/api/v1/rti_requests/${rtiRequestId}/histories/${historyId}`,

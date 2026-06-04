@@ -29,7 +29,7 @@ def get_rti_request_history_service(
 
 @router.get("/rti_requests/{id}/histories", response_model=RTIRequestHistoryListResponse)
 async def get_rti_request_histories_endpoint(
-    id: Annotated[UUID, Path(title="ID of the RTI Request")],
+    id: Annotated[int, Path(title="ID of the RTI Request")],
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(10, ge=1, le=100, alias="pageSize", description="Page size"),
     service: RTIRequestHistoryService = Depends(get_rti_request_history_service),
@@ -43,7 +43,7 @@ async def get_rti_request_histories_endpoint(
 
 @router.post("/rti_requests/{id}/histories", response_model=RTIRequestHistoryResponse)
 async def create_rti_request_history_endpoint(
-    id: Annotated[UUID, Path(title="ID of the RTI Request")],
+    id: Annotated[int, Path(title="ID of the RTI Request")],
     status_id: Annotated[UUID, Form(alias="statusId", description="ID of the RTI Status")],
     direction: Annotated[RTIDirection, Form(description="Direction of the RTI Status History (sent / received)")],
     entry_time: Annotated[Optional[datetime], Form(alias="entryTime", description="Entry time for the RTI Status History")] = None,
@@ -71,7 +71,7 @@ async def create_rti_request_history_endpoint(
 
 @router.put("/rti_requests/{rti_id}/histories/{history_id}", response_model=RTIRequestHistoryResponse)
 async def update_rti_request_history_endpoint(
-    rti_id: Annotated[UUID, Path(title="ID of the RTI Request")],
+    rti_id: Annotated[int, Path(title="ID of the RTI Request")],
     history_id: Annotated[UUID, Path(title="ID of the RTI Status History")],
     status_id: Annotated[Optional[UUID], Form(alias="statusId", description="ID of the RTI Status")] = None,
     direction: Annotated[Optional[RTIDirection], Form(description="Direction of the RTI Status History (sent / received)")] = None,
@@ -106,7 +106,7 @@ async def update_rti_request_history_endpoint(
 
 @router.delete("/rti_requests/{rti_id}/histories/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_rti_request_history_endpoint(
-    rti_id: Annotated[UUID, Path(title="ID of the RTI Request")],
+    rti_id: Annotated[int, Path(title="ID of the RTI Request")],
     history_id: Annotated[UUID, Path(title="ID of the RTI Status History")],
     service: RTIRequestHistoryService = Depends(get_rti_request_history_service),
     user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER])),

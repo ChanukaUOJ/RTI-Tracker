@@ -13,7 +13,7 @@ export const rtiRequestsService = {
     return response.data;
   },
 
-  async getById(id: string, httpClient?: any) {
+  async getById(id: number, httpClient?: any) {
     const response = await httpClient.request({
       url: `${BASE_URL}/api/v1/rti_requests/${id}`,
       method: 'GET',
@@ -50,7 +50,7 @@ export const rtiRequestsService = {
     }
   },
 
-  async remove(id: string, httpClient?: any) {
+  async remove(id: number, httpClient?: any) {
     await httpClient.request({
       url: `${BASE_URL}/api/v1/rti_requests/${id}`,
       method: 'DELETE',

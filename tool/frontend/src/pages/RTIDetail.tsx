@@ -18,9 +18,11 @@ export function RTIDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const numericId = parseInt(id || '', 10) || 0;
+
   // TanStack Hooks
-  const { data: request, isLoading: isRequestLoading, error: requestError } = useRTIRequestDetail(id || '');
-  const { data: historyResponse, isLoading: isHistoryLoading } = useRtiRequestHistories(id || '');
+  const { data: request, isLoading: isRequestLoading, error: requestError } = useRTIRequestDetail(numericId);
+  const { data: historyResponse, isLoading: isHistoryLoading } = useRtiRequestHistories(numericId);
 
   const { data: statusesResponse, isLoading: isStatusesLoading } = useStatuses(1, 100);
   const statuses: RTIStatus[] = statusesResponse?.data || [];
@@ -101,7 +103,7 @@ export function RTIDetail() {
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    if (!numericId) return;
 
     // Validation: Require at least one document except for COMPLETED
     // const totalFiles = eventFormData.existingFiles.length + eventFormData.newFiles.length;
@@ -116,7 +118,7 @@ export function RTIDetail() {
         const filesToDelete = selectedEntry.files.filter(f => !eventFormData.existingFiles.includes(f));
 
         await updateHistoryMutation.mutateAsync({
-          rtiRequestId: id,
+          rtiRequestId: numericId,
           historyId: selectedEntry.id,
           payload: {
             statusId: selectedStatusToSave.id,
@@ -131,7 +133,7 @@ export function RTIDetail() {
         toast.success('Event updated');
       } else {
         await createHistoryMutation.mutateAsync({
-          rtiRequestId: id,
+          rtiRequestId: numericId,
           payload: {
             statusId: selectedStatusToSave.id,
             direction: eventFormData.direction,
@@ -153,11 +155,11 @@ export function RTIDetail() {
   };
 
   const confirmDeleteEntry = async () => {
-    if (!selectedEntry || !id) return;
+    if (!selectedEntry || !numericId) return;
 
     try {
       await deleteHistoryMutation.mutateAsync({
-        rtiRequestId: id,
+        rtiRequestId: numericId,
         historyId: selectedEntry.id
       });
       toast.success('Event deleted');
@@ -171,10 +173,10 @@ export function RTIDetail() {
   const isCompleted = completedStatus && history.some(h => h.rtiStatus.id === completedStatus.id);
 
   const handleMarkCompleted = async () => {
-    if (!id || !completedStatus) return;
+    if (!numericId || !completedStatus) return;
     try {
       await createHistoryMutation.mutateAsync({
-        rtiRequestId: id,
+        rtiRequestId: numericId,
         payload: {
           statusId: completedStatus.id,
           direction: 'received',
@@ -225,16 +227,19 @@ export function RTIDetail() {
             {/* Overview */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-3">
               <div>
-                <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-1">{request?.title}</h1>
-                <p className="text-gray-600 leading-relaxed text-xs">
+                <p className="text-gray-600 leading-relaxed text-sm font-semibold select-all">
+                  ID #{request?.id}
+                </p>
+                <h1 className="text-lg md:text-xl font-bold text-gray-900">{request?.title}</h1>
+                <p className="text-gray-600 leading-relaxed text-sm pt-1">
                   {request?.description || 'No description provided.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 border-t pt-2 border-gray-50">
-                {/* Target Entity */}
+                {/* RECEIVER */}
                 <div className="space-y-3">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Target Entity</h3>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">RECEIVER</h3>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <Building2 className="w-4 h-4 text-gray-400 mt-0.5" />
@@ -367,8 +372,6 @@ export function RTIDetail() {
                               <span className="text-[10px] font-medium text-gray-400">Start: {new Date(h.entryTime).toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' })}</span>
                               {h.exitTime ? (
                                 <span className="text-[10px] font-medium text-gray-400">End: {new Date(h.exitTime).toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' })}</span>
-                              ) : idx === 0 ? (
-                                <span className="text-[10px] font-medium text-blue-400 italic">Active</span>
                               ) : h.rtiStatus?.name !== 'CREATED' ? (
                                 <span className="text-[10px] font-medium text-gray-400">End: -</span>
                               ) : null}

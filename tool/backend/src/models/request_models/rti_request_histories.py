@@ -29,6 +29,26 @@ class RTIRequestHistoryRequest(BaseModel):
             return datetime.now(timezone.utc)
         return v
 
+    @field_validator("exit_time", mode="before")
+    @classmethod
+    def set_exit_time(cls, v):
+        if v == "":
+            return None
+        return v
+
+    @field_validator("entry_time", "exit_time", mode="after")
+    @classmethod
+    def adjust_time(cls, v: Optional[datetime]):
+        if v is not None and v.hour == 0 and v.minute == 0 and v.second == 0 and v.microsecond == 0:
+            now = datetime.now(timezone.utc)
+            return v.replace(
+                hour=now.hour, 
+                minute=now.minute, 
+                second=now.second, 
+                microsecond=now.microsecond
+            )
+        return v
+
 class RTIRequestHistoryUpdateRequest(BaseModel):
     id: UUID = Field(..., description="ID of the RTI Status History record")
     status_id: Optional[UUID] = Field(None, alias="statusId", description="ID of the RTI Status")
@@ -38,4 +58,24 @@ class RTIRequestHistoryUpdateRequest(BaseModel):
     exit_time: Optional[datetime] = Field(None, alias="exitTime", description="Exit time for the RTI Status History")
     files_to_add: List[UploadFile] = Field([], alias="filesToAdd", description="New files to add (pdf only)")
     files_to_delete: List[str] = Field([], alias="filesToDelete", description="Relative paths of files to delete")
+
+    @field_validator("entry_time", "exit_time", mode="before")
+    @classmethod
+    def handle_empty_strings(cls, v):
+        if v == "":
+            return None
+        return v
+
+    @field_validator("entry_time", "exit_time", mode="after")
+    @classmethod
+    def adjust_time(cls, v: Optional[datetime]):
+        if v is not None and v.hour == 0 and v.minute == 0 and v.second == 0 and v.microsecond == 0:
+            now = datetime.now(timezone.utc)
+            return v.replace(
+                hour=now.hour, 
+                minute=now.minute, 
+                second=now.second, 
+                microsecond=now.microsecond
+            )
+        return v
 
