@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 
 import { Layout } from './components/Layout';
@@ -18,12 +18,15 @@ import toast from 'react-hot-toast';
 export function App() {
   const { isLoading, isSignedIn, signOut } = useAsgardeo();
 
-  const queryClient = useMemo(() => {
+  const signOutRef = useRef(signOut);
+  signOutRef.current = signOut;
+
+  const [queryClient] = useState(() => {
     const handleAuthError = (error: any) => {
       // Check if it's a 401 Unauthorized response from either the http client or Axios
       if (error?.response?.status === 401 || error?.status === 401) {
         toast.error('Session expired. Please sign in again.', { id: 'auth-error' });
-        signOut();
+        signOutRef.current();
       }
     };
 
@@ -45,7 +48,7 @@ export function App() {
         },
       },
     });
-  }, [signOut]);
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
